@@ -1,0 +1,332 @@
+ROLES (ONLY 3)
+1️⃣ Admin (Developer / Platform Owner)
+
+Controls the entire system
+
+Manages shops, delivery users, orders, payments, reports
+
+Verifies shops and delivery accounts
+
+Full read/write access
+
+2️⃣ Shop
+
+Represents a single physical shop (no branches)
+
+Logs in with its own account
+
+Creates and manages orders
+
+Sees its own statistics and order history
+
+Manages shop location (latitude & longitude)
+
+3️⃣ Delivery
+
+Logs in
+
+Sees nearby orders on map
+
+Accepts, picks up, and delivers orders
+
+Uses QR code + OTP verification
+
+Sees earnings and completed deliveries
+
+✅ No branches
+✅ Much cleaner logic
+✅ Easier ER diagram
+✅ Better for academic + real-world use
+
+🧠 CORE LOGIC (HOW THE SYSTEM WORKS)
+
+Only Admin, Shop, Delivery can log in
+
+Each Shop = one location
+
+Orders are created by shops
+
+Orders appear on delivery map based on shop location
+
+Delivery handles pickup and drop-off
+
+Admin oversees everything
+
+DATABASE DESIGN:
+db name: baladipick
+
+users
+- id (PK)
+- name
+- email (unique)
+- password
+- phone
+- role ENUM('admin','shop','delivery')
+- verified BOOLEAN
+- created_at
+- updated_at
+
+shops
+- id (PK)
+- user_id (FK → users.id)
+
+- shop_name
+- phone
+- address
+
+- latitude
+- longitude
+
+- is_verified
+- created_at
+- updated_at
+orders
+- id (PK)
+
+- shop_id (FK → shops.id)
+- delivery_id (FK → users.id, nullable)
+
+- client_name
+- client_phone
+
+- client_lat
+- client_lng
+
+- shop_lat
+- shop_lng
+
+- vehicle_type ENUM('bike','car')
+- profit DECIMAL(10,2)
+
+- status ENUM('available','pending','in_transit','delivered','cancelled')
+
+- qr_code
+- qr_verified
+- qr_verified_at
+
+- delivery_otp
+- delivery_verified
+- delivery_verified_at
+
+- created_at
+- updated_at
+payments
+- id (PK)
+- order_id (FK → orders.id)
+- amount
+- method ENUM('cash')
+- status ENUM('unpaid','paid')
+- created_at
+- updated_at
+notifications
+- id (PK)
+- sender_id (FK → users.id)
+- receiver_id (FK → users.id)
+
+- title
+- message
+- type ENUM('system','order','payment')
+- is_read
+- created_at
+order_logs
+- id (PK)
+- order_id (FK → orders.id)
+- changed_by (FK → users.id)
+
+- status
+- note
+- created_at
+
+ER RELATIONSHIPS:
+User (shop) owns Shop → 1 : 1
+
+Shop creates Orders → 1 : N
+
+Delivery delivers Orders → 1 : N
+
+Order has Payment → 1 : 1
+
+Order has Logs → 1 : N
+
+User sends / receives Notifications → 1 : N
+
+STEP-BY-STEP PROMPT:
+can copy-paste everything below 👇
+
+🔹 PROJECT PROMPT START 🔹
+
+You are building a Laravel 12 web application named BaladiPick using MySQL.
+Database name: baladipick.
+The system has three roles only: Admin, Shop, and Delivery.
+There are no branches. Each shop represents a single physical location.
+
+STEP 1 — SHOP MODULE
+Shop Capabilities
+
+Login as shop
+
+Set shop location (lat/lng)
+
+Create delivery orders
+
+Track order status
+
+View statistics
+
+Shop Features
+
+Shop authentication (role = shop)
+
+Shop profile:
+
+Name
+
+Phone
+
+Address
+
+Latitude / Longitude
+
+Order creation:
+
+Client name & phone
+
+Client location (map)
+
+Vehicle type
+
+Profit
+
+On order creation:
+
+---
+
+SESSION NOTES — 2025-12-24
+
+- Delivery Map: shows shops with available orders as red shop icons; clicking a shop switches to order view with red dots; table filters to that shop; “Show All Shops” resets.
+- Geolocation: small green bike marker displays current delivery location; persists across views and refresh.
+- Routing: clicking shop or order draws a simple polyline path from current location to target. Optional upgrade: road routing via Leaflet Routing Machine (OSRM).
+- Pickup Flow: Shop verifies QR on order details; OTP auto-generated and sent to client; delivery never sees the OTP value, only inputs OTP from client to complete.
+
+Next Steps After Break
+- Verify delivery map rendering stability and performance; check zoom/bounds behavior.
+- Consider enabling real road routing (OSRM) for better navigation.
+- Investigate server start failure (php artisan serve exit code 1): run migrations/seeds and check storage/logs/laravel.log.
+- Add “View on map” per table row to pan/zoom to the order marker.
+
+Quick Commands
+php artisan migrate
+php artisan db:seed
+php artisan serve
+
+Notes
+- Delivery map endpoint now returns both grouped shops and raw orders.
+- Shop marker remains visible when viewing its orders, per delivery UX request.
+
+Copy shop lat/lng into order
+
+Set status = available
+
+Shop dashboard:
+
+Total orders
+
+Delivered vs pending
+
+Earnings summary
+
+STEP 2 — DELIVERY MODULE
+Delivery Capabilities
+
+Login as delivery
+
+View nearby orders on map
+
+Accept and deliver orders
+
+Verify pickup & delivery
+
+Delivery Features
+
+Delivery authentication
+
+Map view:
+
+Show available orders near delivery
+
+Pickup flow:
+
+Accept order
+
+Generate QR code
+
+Delivery flow:
+
+Generate OTP
+
+Verify OTP
+
+Mark order delivered
+
+Delivery dashboard:
+
+Completed orders
+
+Earnings
+
+STEP 3 — ADMIN CONTROL PANEL
+Admin Capabilities
+
+Full system control
+
+View all data
+
+Admin Features
+
+Admin authentication
+
+Dashboard:
+
+Total shops
+
+Total deliveries
+
+Orders summary
+
+Shop management:
+
+Verify shops
+
+Disable shops
+
+Delivery management:
+
+Verify delivery users
+
+Orders:
+
+View all orders
+
+Cancel or reassign
+
+Reports:
+
+Export CSV
+
+Revenue overview
+
+SECURITY RULES
+
+Role-based middleware
+
+Laravel Policies
+
+Password hashing
+
+Transactions for order pickup
+
+Log all order status changes
+
+TECH STACK
+
+Laravel 12, PHP, MySQL, Blade, JavaScript, Maps API, REST APIs, Git/GitHub
