@@ -6,8 +6,16 @@
 <div class="row">
     <div class="col-md-8">
         <div class="card">
-            <div class="card-header">
-                <h4>Order #{{ $order->id }} Details</h4>
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">Order #{{ $order->id }} Details</h4>
+                <div>
+                    @if($order->shop_lat && $order->shop_lng && $order->client_lat && $order->client_lng)
+                        <button type="button" class="btn btn-secondary"
+                            onclick="showOrderLocationMap({{ $order->shop_lat }}, {{ $order->shop_lng }}, {{ $order->client_lat }}, {{ $order->client_lng }}, '{{ $order->shop->shop_name }}', '{{ $order->client_name }}')">
+                            <i class="bi bi-geo-alt"></i> Show Location
+                        </button>
+                    @endif
+                </div>
             </div>
             <div class="card-body">
                 <div class="row mb-3">
@@ -128,4 +136,72 @@
         </div>
     </div>
 </div>
+<!-- Location Map Modal -->
+<div class="modal fade" id="orderLocationModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="width: 650px; max-width: 100%;">
+            <div class="modal-header">
+                <h5 class="modal-title" id="orderLocationModalTitle">Route</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div id="orderLocationMap" style="width: 100%; height: 650px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
+
+@push('styles')
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+@endpush
+
+@push('scripts')
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+let orderMap = null;
+let shopMarker = null;
+let clientMarker = null;
+let routeLine = null;
+
+function showOrderLocationMap(shopLat, shopLng, clientLat, clientLng, shopName, clientName) {
+    const modal = new bootstrap.Modal(document.getElementById('orderLocationModal'));
+    document.getElementById('orderLocationModalTitle').textContent = shopName + ' → ' + clientName;
+    modal.show();
+
+    setTimeout(() => {
+        if (orderMap) {
+            orderMap.remove();
+        }
+
+        // Center between two points
+        const bounds = L.latLngBounds([
+            [shopLat, shopLng],
+            [clientLat, clientLng]
+        ]);
+
+        orderMap = L.map('orderLocationMap');
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(orderMap);
+
+        // Markers
+        shopMarker = L.marker([shopLat, shopLng], { title: 'Pickup: ' + shopName }).addTo(orderMap)
+            .bindPopup('<b>Pickup</b><br>' + shopName).openPopup();
+
+        clientMarker = L.marker([clientLat, clientLng], { title: 'Drop-off: ' + clientName }).addTo(orderMap)
+            .bindPopup('<b>Drop-off</b><br>' + clientName);
+
+        // Route polyline (straight line for now)
+        routeLine = L.polyline([[shopLat, shopLng], [clientLat, clientLng]], {
+            color: '#0d6efd',
+            weight: 4,
+            opacity: 0.8
+        }).addTo(orderMap);
+
+        orderMap.fitBounds(bounds, { padding: [30, 30] });
+    }, 300);
+}
+</script>
+@endpush

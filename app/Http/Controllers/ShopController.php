@@ -93,7 +93,12 @@ class ShopController extends Controller
      */
     public function createOrder()
     {
-        $shop = Auth::user()->shop;
+        $user = Auth::user();
+        $shop = $user->shop;
+        
+        if (!$user->verified) {
+            return redirect()->route('shop.dashboard')->with('error', 'Your account is not verified yet. Please wait for admin approval. (Will be verified within 2 days)');
+        }
         
         if (!$shop || !$shop->latitude || !$shop->longitude) {
             return redirect()->route('shop.profile')->with('error', 'Please set your shop location first.');
@@ -107,7 +112,13 @@ class ShopController extends Controller
      */
     public function storeOrder(Request $request)
     {
-        $shop = Auth::user()->shop;
+        $user = Auth::user();
+
+        if (!$user->verified) {
+            return back()->with('error', 'Your account is not verified yet. Please wait for admin approval. (Will be verified within 2 days)');
+        }
+
+        $shop = $user->shop;
 
         if (!$shop || !$shop->latitude || !$shop->longitude) {
             return back()->with('error', 'Please set your shop location first.');

@@ -89,6 +89,12 @@ class DeliveryController extends Controller
      */
     public function acceptOrder($id)
     {
+        $user = Auth::user();
+
+        if (!$user->verified) {
+            return back()->with('error', 'Your account is not verified yet. Please wait for admin approval. (Will be verified within 2 days) before accepting orders.');
+        }
+
         $order = Order::findOrFail($id);
 
         if ($order->status !== 'available') {

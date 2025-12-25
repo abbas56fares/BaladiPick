@@ -10,7 +10,7 @@
                 <h4>Register for BaladiPick</h4>
             </div>
             <div class="card-body">
-                <form action="{{ route('register') }}" method="POST">
+                <form action="{{ route('register') }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     
                     <div class="mb-3">
@@ -49,6 +49,16 @@
                             <option value="delivery" {{ old('role') == 'delivery' ? 'selected' : '' }}>Delivery Driver</option>
                         </select>
                         @error('role')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="id_document" class="form-label">ID/Passport Document</label>
+                        <input type="file" class="form-control @error('id_document') is-invalid @enderror" 
+                               id="id_document" name="id_document" accept="image/*" required>
+                        <small class="form-text text-muted">Upload a clear photo of your ID or passport. This will be verified by an admin before you can start.</small>
+                        @error('id_document')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>

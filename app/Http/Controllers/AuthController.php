@@ -70,7 +70,14 @@ class AuthController extends Controller
             'password' => 'required|string|min:8|confirmed',
             'phone' => 'required|string|max:20',
             'role' => 'required|in:shop,delivery',
+            'id_document' => 'required|image|mimes:jpeg,png,jpg,gif|max:5120',
         ]);
+
+        // Upload ID document
+        $filePath = null;
+        if ($request->hasFile('id_document')) {
+            $filePath = $request->file('id_document')->store('id_documents', 'public');
+        }
 
         $user = User::create([
             'name' => $validated['name'],
@@ -79,15 +86,16 @@ class AuthController extends Controller
             'phone' => $validated['phone'],
             'role' => $validated['role'],
             'verified' => false,
+            'id_document_path' => $filePath,
         ]);
 
         Auth::login($user);
 
         // Redirect based on role
         if ($user->role === 'shop') {
-            return redirect()->route('shop.profile')->with('success', 'Registration successful! Please complete your shop profile.');
+            return redirect()->route('shop.profile')->with('success', 'Registration successful! Your ID document is pending admin verification. You will be able to create orders once verified.');
         } else {
-            return redirect()->route('delivery.dashboard')->with('success', 'Registration successful!');
+            return redirect()->route('delivery.dashboard')->with('success', 'Registration successful! Your ID document is pending admin verification. You will be able to accept orders once verified.');
         }
     }
 

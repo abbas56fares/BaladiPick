@@ -7,9 +7,14 @@
     <div class="col-12">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2>System Reports</h2>
-            <a href="{{ route('admin.reports.export') }}" class="btn btn-success">
-                <i class="bi bi-download"></i> Export CSV
-            </a>
+            <div>
+                <a href="{{ route('admin.reports.export') }}" class="btn btn-success">
+                    <i class="bi bi-download"></i> Export CSV
+                </a>
+                <a href="{{ route('admin.reports.export.pdf') }}" class="btn btn-danger ms-2">
+                    <i class="bi bi-file-pdf"></i> Export PDF
+                </a>
+            </div>
         </div>
     </div>
 </div>

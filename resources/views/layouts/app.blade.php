@@ -45,14 +45,36 @@
                                 <a class="nav-link" href="{{ route('delivery.orders.my') }}">My Orders</a>
                             </li>
                         @elseif(auth()->user()->isAdmin())
+                            @php
+                                $unverifiedShopsCount = \App\Models\User::where('role', 'shop')
+                                    ->where('verified', false)
+                                    ->count();
+                                $unverifiedDeliveriesCount = \App\Models\User::where('role', 'delivery')
+                                    ->where('verified', false)
+                                    ->count();
+                            @endphp
                             <li class="nav-item">
                                 <a class="nav-link" href="{{ route('admin.dashboard') }}">Dashboard</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" href="{{ route('admin.shops') }}">Shops</a>
+                                <a class="nav-link position-relative" href="{{ route('admin.shops') }}">
+                                    Shops
+                                    @if($unverifiedShopsCount > 0)
+                                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                            {{ $unverifiedShopsCount }}
+                                        </span>
+                                    @endif
+                                </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" href="{{ route('admin.deliveries') }}">Deliveries</a>
+                                <a class="nav-link position-relative" href="{{ route('admin.deliveries') }}">
+                                    Deliveries
+                                    @if($unverifiedDeliveriesCount > 0)
+                                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                            {{ $unverifiedDeliveriesCount }}
+                                        </span>
+                                    @endif
+                                </a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link" href="{{ route('admin.orders') }}">Orders</a>

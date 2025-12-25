@@ -10,6 +10,26 @@
                 <h4>Manage Shops</h4>
             </div>
             <div class="card-body">
+                <!-- Search and Filter Form -->
+                <form action="{{ route('admin.shops') }}" method="GET" class="mb-4">
+                    <div class="row g-3">
+                        <div class="col-md-5">
+                            <input type="text" name="search" class="form-control" placeholder="Search by name, email, phone, address..." value="{{ request('search') }}">
+                        </div>
+                        <div class="col-md-3">
+                            <select name="verified" class="form-select">
+                                <option value="">All Status</option>
+                                <option value="1" {{ request('verified') === '1' ? 'selected' : '' }}>Verified</option>
+                                <option value="0" {{ request('verified') === '0' ? 'selected' : '' }}>Unverified</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i> Search</button>
+                            <a href="{{ route('admin.shops') }}" class="btn btn-secondary"><i class="bi bi-x-circle"></i> Clear</a>
+                        </div>
+                    </div>
+                </form>
+
                 @if($shops->count() > 0)
                     <div class="table-responsive">
                         <table class="table table-hover">
@@ -20,6 +40,7 @@
                                     <th>Owner</th>
                                     <th>Email</th>
                                     <th>Phone</th>
+                                    <th>ID Document</th>
                                     <th>Address</th>
                                     <th>Verified</th>
                                     <th>Actions</th>
@@ -33,6 +54,13 @@
                                         <td>{{ $shop->user->name }}</td>
                                         <td>{{ $shop->user->email }}</td>
                                         <td>{{ $shop->phone }}</td>
+                                        <td>
+                                            @if($shop->user->id_document_path)
+                                                <a href="{{ asset('storage/' . $shop->user->id_document_path) }}" target="_blank" class="btn btn-sm btn-info">View</a>
+                                            @else
+                                                <span class="text-muted">N/A</span>
+                                            @endif
+                                        </td>
                                         <td>{{ Str::limit($shop->address, 30) }}</td>
                                         <td>
                                             @if($shop->is_verified)
@@ -42,15 +70,24 @@
                                             @endif
                                         </td>
                                         <td>
+                                            <a href="{{ route('admin.shops.show', $shop->id) }}" class="btn btn-sm btn-primary mb-1" title="View Details">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            @if($shop->latitude && $shop->longitude)
+                                                <button type="button" class="btn btn-sm btn-secondary mb-1" title="See Location" 
+                                                    onclick="showLocationMap({{ $shop->latitude }}, {{ $shop->longitude }}, '{{ $shop->shop_name }}')">
+                                                    <i class="bi bi-geo-alt"></i>
+                                                </button>
+                                            @endif
                                             @if(!$shop->is_verified)
                                                 <form action="{{ route('admin.shops.verify', $shop->id) }}" method="POST" class="d-inline">
                                                     @csrf
-                                                    <button type="submit" class="btn btn-sm btn-success">Verify</button>
+                                                    <button type="submit" class="btn btn-sm btn-success mb-1">Verify</button>
                                                 </form>
                                             @else
                                                 <form action="{{ route('admin.shops.disable', $shop->id) }}" method="POST" class="d-inline">
                                                     @csrf
-                                                    <button type="submit" class="btn btn-sm btn-danger">Disable</button>
+                                                    <button type="submit" class="btn btn-sm btn-danger mb-1">Disable</button>
                                                 </form>
                                             @endif
                                         </td>
@@ -70,4 +107,52 @@
         </div>
     </div>
 </div>
+
+<!-- Location Map Modal -->
+<div class="modal fade" id="locationModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="width: 650px; max-width: 100%;">
+            <div class="modal-header">
+                <h5 class="modal-title" id="locationModalTitle">Location</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div id="locationMap" style="width: 100%; height: 650px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
+
+@push('styles')
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+@endpush
+
+@push('scripts')
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+let locationMap = null;
+let locationMarker = null;
+
+function showLocationMap(lat, lng, name) {
+    const modal = new bootstrap.Modal(document.getElementById('locationModal'));
+    document.getElementById('locationModalTitle').textContent = name + ' - Location';
+    modal.show();
+    
+    setTimeout(() => {
+        if (locationMap) {
+            locationMap.remove();
+        }
+        
+        locationMap = L.map('locationMap').setView([lat, lng], 15);
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(locationMap);
+        
+        locationMarker = L.marker([lat, lng]).addTo(locationMap)
+            .bindPopup('<b>' + name + '</b>').openPopup();
+    }, 300);
+}
+</script>
+@endpush

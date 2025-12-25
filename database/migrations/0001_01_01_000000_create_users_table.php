@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('phone')->nullable();
             $table->enum('role', ['admin', 'shop', 'delivery'])->default('shop');
             $table->boolean('verified')->default(false);
+            $table->string('id_document_path')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });

@@ -7,7 +7,7 @@ use App\Http\Controllers\AdminController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return redirect()->route('login');
+    return view('landing');
 });
 
 // Authentication Routes
@@ -56,11 +56,13 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     
     // Shop Management
     Route::get('/shops', [AdminController::class, 'shops'])->name('shops');
+    Route::get('/shops/{id}', [AdminController::class, 'showShop'])->name('shops.show');
     Route::post('/shops/{id}/verify', [AdminController::class, 'verifyShop'])->name('shops.verify');
     Route::post('/shops/{id}/disable', [AdminController::class, 'disableShop'])->name('shops.disable');
     
     // Delivery Management
     Route::get('/deliveries', [AdminController::class, 'deliveries'])->name('deliveries');
+    Route::get('/deliveries/{id}', [AdminController::class, 'showDelivery'])->name('deliveries.show');
     Route::post('/deliveries/{id}/verify', [AdminController::class, 'verifyDelivery'])->name('deliveries.verify');
     Route::post('/deliveries/{id}/disable', [AdminController::class, 'disableDelivery'])->name('deliveries.disable');
     
@@ -72,5 +74,6 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     // Reports
     Route::get('/reports', [AdminController::class, 'reports'])->name('reports');
     Route::get('/reports/export', [AdminController::class, 'exportReport'])->name('reports.export');
+    Route::get('/reports/export/pdf', [AdminController::class, 'exportReportPdf'])->name('reports.export.pdf');
 });
 

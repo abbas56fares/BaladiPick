@@ -50,10 +50,40 @@ class AdminController extends Controller
     /**
      * Show all shops
      */
-    public function shops()
+    public function shops(Request $request)
     {
-        $shops = Shop::with('user')->latest()->paginate(20);
+        $query = Shop::with('user');
+
+        // Search filter
+        if ($request->has('search') && $request->search) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('shop_name', 'like', "%{$search}%")
+                  ->orWhere('phone', 'like', "%{$search}%")
+                  ->orWhere('address', 'like', "%{$search}%")
+                  ->orWhereHas('user', function($q) use ($search) {
+                      $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        // Verification status filter
+        if ($request->has('verified') && $request->verified !== '') {
+            $query->where('is_verified', $request->verified);
+        }
+
+        $shops = $query->latest()->paginate(20)->withQueryString();
         return view('admin.shops', compact('shops'));
+    }
+
+    /**
+     * Show single shop details
+     */
+    public function showShop($id)
+    {
+        $shop = Shop::with('user', 'orders')->findOrFail($id);
+        return view('admin.shop-details', compact('shop'));
     }
 
     /**
@@ -63,6 +93,7 @@ class AdminController extends Controller
     {
         $shop = Shop::findOrFail($id);
         $shop->update(['is_verified' => true]);
+        $shop->user->update(['verified' => true]);
 
         return back()->with('success', 'Shop verified successfully.');
     }
@@ -74,6 +105,7 @@ class AdminController extends Controller
     {
         $shop = Shop::findOrFail($id);
         $shop->update(['is_verified' => false]);
+        $shop->user->update(['verified' => false]);
 
         return back()->with('success', 'Shop disabled successfully.');
     }
@@ -81,10 +113,36 @@ class AdminController extends Controller
     /**
      * Show all deliveries
      */
-    public function deliveries()
+    public function deliveries(Request $request)
     {
-        $deliveries = User::where('role', 'delivery')->latest()->paginate(20);
+        $query = User::where('role', 'delivery');
+
+        // Search filter
+        if ($request->has('search') && $request->search) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('phone', 'like', "%{$search}%");
+            });
+        }
+
+        // Verification status filter
+        if ($request->has('verified') && $request->verified !== '') {
+            $query->where('verified', $request->verified);
+        }
+
+        $deliveries = $query->latest()->paginate(20)->withQueryString();
         return view('admin.deliveries', compact('deliveries'));
+    }
+
+    /**
+     * Show single delivery details
+     */
+    public function showDelivery($id)
+    {
+        $delivery = User::where('role', 'delivery')->with('deliveryOrders')->findOrFail($id);
+        return view('admin.delivery-details', compact('delivery'));
     }
 
     /**
@@ -257,5 +315,30 @@ class AdminController extends Controller
         };
 
         return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * Export report as PDF
+     */
+    public function exportReportPdf()
+    {
+        $orders = Order::with(['shop', 'delivery'])->get();
+        
+        $totalOrders = Order::count();
+        $deliveredOrders = Order::where('status', 'delivered')->count();
+        $cancelledOrders = Order::where('status', 'cancelled')->count();
+        $totalRevenue = Order::where('status', 'delivered')->sum('profit');
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.reports-pdf', compact(
+            'orders',
+            'totalOrders',
+            'deliveredOrders',
+            'cancelledOrders',
+            'totalRevenue'
+        ));
+
+        $filename = 'orders_report_' . date('Y-m-d_His') . '.pdf';
+        
+        return $pdf->download($filename);
     }
 }
