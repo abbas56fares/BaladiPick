@@ -156,20 +156,55 @@ document.addEventListener('DOMContentLoaded', function () {
             map.removeLayer(routeLayer);
         }
 
-        // Simple straight-line path from current location to target
-        routeLayer = L.polyline([
-            [deliveryLocation.lat, deliveryLocation.lng],
-            [targetLat, targetLng]
-        ], {
-            color: '#0d6efd',
-            weight: 4,
-            opacity: 0.85
-        }).addTo(map);
+        const startLat = deliveryLocation.lat;
+        const startLng = deliveryLocation.lng;
 
-        const bounds = routeLayer.getBounds();
-        if (bounds && bounds.isValid()) {
-            map.fitBounds(bounds.pad(0.2));
-        }
+        // Try OSRM routing API for street path
+        const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${startLng},${startLat};${targetLng},${targetLat}?overview=full&geometries=geojson`;
+
+        fetch(osrmUrl)
+            .then(res => res.json())
+            .then(data => {
+                if (data && data.routes && data.routes.length > 0) {
+                    const geometry = data.routes[0].geometry; // GeoJSON LineString
+                    const feature = {
+                        type: 'Feature',
+                        properties: {},
+                        geometry
+                    };
+                    routeLayer = L.geoJSON(feature, {
+                        style: { color: '#0d6efd', weight: 4, opacity: 0.9 }
+                    }).addTo(map);
+
+                    const bounds = routeLayer.getBounds();
+                    if (bounds && bounds.isValid()) {
+                        map.fitBounds(bounds.pad(0.2));
+                    }
+                } else {
+                    // Fallback: straight line
+                    routeLayer = L.polyline([[startLat, startLng], [targetLat, targetLng]], {
+                        color: '#0d6efd',
+                        weight: 4,
+                        opacity: 0.85
+                    }).addTo(map);
+                    const bounds = routeLayer.getBounds();
+                    if (bounds && bounds.isValid()) {
+                        map.fitBounds(bounds.pad(0.2));
+                    }
+                }
+            })
+            .catch(() => {
+                // Fallback on error
+                routeLayer = L.polyline([[startLat, startLng], [targetLat, targetLng]], {
+                    color: '#0d6efd',
+                    weight: 4,
+                    opacity: 0.85
+                }).addTo(map);
+                const bounds = routeLayer.getBounds();
+                if (bounds && bounds.isValid()) {
+                    map.fitBounds(bounds.pad(0.2));
+                }
+            });
     }
 
     resetBtn.addEventListener('click', function() {

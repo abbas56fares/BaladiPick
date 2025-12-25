@@ -24,6 +24,8 @@ class User extends Authenticatable
         'phone',
         'role',
         'verified',
+        'cancellation_count',
+        'cooldown_all_until',
         'id_document_path',
     ];
 
@@ -48,6 +50,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'verified' => 'boolean',
+            'cooldown_all_until' => 'datetime',
         ];
     }
 

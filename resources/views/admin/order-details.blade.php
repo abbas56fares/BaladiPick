@@ -162,7 +162,7 @@
 let orderMap = null;
 let shopMarker = null;
 let clientMarker = null;
-let routeLine = null;
+let routeLayer = null;
 
 function showOrderLocationMap(shopLat, shopLng, clientLat, clientLng, shopName, clientName) {
     const modal = new bootstrap.Modal(document.getElementById('orderLocationModal'));
@@ -193,14 +193,45 @@ function showOrderLocationMap(shopLat, shopLng, clientLat, clientLng, shopName, 
         clientMarker = L.marker([clientLat, clientLng], { title: 'Drop-off: ' + clientName }).addTo(orderMap)
             .bindPopup('<b>Drop-off</b><br>' + clientName);
 
-        // Route polyline (straight line for now)
-        routeLine = L.polyline([[shopLat, shopLng], [clientLat, clientLng]], {
-            color: '#0d6efd',
-            weight: 4,
-            opacity: 0.8
-        }).addTo(orderMap);
+        // Try OSRM routing for street path
+        const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${shopLng},${shopLat};${clientLng},${clientLat}?overview=full&geometries=geojson`;
 
-        orderMap.fitBounds(bounds, { padding: [30, 30] });
+        fetch(osrmUrl)
+            .then(res => res.json())
+            .then(data => {
+                if (data && data.routes && data.routes.length > 0) {
+                    const geometry = data.routes[0].geometry; // GeoJSON LineString
+                    // Wrap into a Feature for Leaflet geoJSON
+                    const feature = {
+                        type: 'Feature',
+                        properties: {},
+                        geometry: geometry
+                    };
+
+                    routeLayer = L.geoJSON(feature, {
+                        style: { color: '#0d6efd', weight: 4, opacity: 0.9 }
+                    }).addTo(orderMap);
+
+                    orderMap.fitBounds(routeLayer.getBounds(), { padding: [30, 30] });
+                } else {
+                    // Fallback: straight line
+                    routeLayer = L.polyline([[shopLat, shopLng], [clientLat, clientLng]], {
+                        color: '#0d6efd',
+                        weight: 4,
+                        opacity: 0.8
+                    }).addTo(orderMap);
+                    orderMap.fitBounds(bounds, { padding: [30, 30] });
+                }
+            })
+            .catch(() => {
+                // Fallback: straight line on error
+                routeLayer = L.polyline([[shopLat, shopLng], [clientLat, clientLng]], {
+                    color: '#0d6efd',
+                    weight: 4,
+                    opacity: 0.8
+                }).addTo(orderMap);
+                orderMap.fitBounds(bounds, { padding: [30, 30] });
+            });
     }, 300);
 }
 </script>

@@ -73,6 +73,7 @@ class DeliveryController extends Controller
                         'client_lng' => $order->client_lng,
                         'vehicle_type' => $order->vehicle_type,
                         'profit' => $order->profit,
+                        'shop_id' => $order->shop_id,
                     ];
                 })
             ];
@@ -95,10 +96,31 @@ class DeliveryController extends Controller
             return back()->with('error', 'Your account is not verified yet. Please wait for admin approval. (Will be verified within 2 days) before accepting orders.');
         }
 
+        // Global cooldown check (all orders)
+        if ($user->cooldown_all_until && now()->lessThan($user->cooldown_all_until)) {
+            return back()->with('error', 'You are on cooldown until ' . $user->cooldown_all_until->format('M d, Y H:i') . ' due to recent cancellations.');
+        }
+
         $order = Order::findOrFail($id);
 
         if ($order->status !== 'available') {
             return back()->with('error', 'This order is not available.');
+        }
+
+        // Per-order cooldown check based on last cancellation log
+        $baseOrderCooldown = 20; // minutes
+        $penalty = ($user->cancellation_count ?? 0) * 5; // minutes
+        $cooldownMinutes = $baseOrderCooldown + $penalty;
+
+        $lastCancel = $order->logs()
+            ->where('status', 'cancelled')
+            ->where('changed_by', $user->id)
+            ->latest()
+            ->first();
+
+        if ($lastCancel && $lastCancel->created_at->greaterThan(now()->subMinutes($cooldownMinutes))) {
+            $remaining = $lastCancel->created_at->addMinutes($cooldownMinutes)->diffForHumans(null, true);
+            return back()->with('error', 'You recently cancelled this order. Try again in ' . $remaining . '.');
         }
 
         DB::beginTransaction();
@@ -151,6 +173,54 @@ class DeliveryController extends Controller
         $order = Auth::user()->deliveryOrders()->with(['shop', 'logs.changedBy'])->findOrFail($id);
 
         return view('delivery.order-details', compact('order'));
+    }
+
+    /**
+     * Cancel an accepted order (return to available) and apply cooldowns
+     */
+    public function cancelOrder($id)
+    {
+        $user = Auth::user();
+        $order = Order::findOrFail($id);
+
+        if ($order->delivery_id !== $user->id) {
+            return back()->with('error', 'You cannot cancel an order you have not accepted.');
+        }
+
+        if ($order->status !== 'pending') {
+            return back()->with('error', 'Only pending (accepted) orders can be cancelled.');
+        }
+
+        DB::beginTransaction();
+        try {
+            // Log a cancellation entry for cooldown tracking
+            OrderLog::create([
+                'order_id' => $order->id,
+                'changed_by' => $user->id,
+                'status' => 'cancelled',
+                'note' => 'Delivery cancelled acceptance; order returned to available',
+            ]);
+
+            // Return order to pool
+            $order->update([
+                'delivery_id' => null,
+                'status' => 'available',
+                'qr_code' => null,
+            ]);
+
+            // Increment user cancellation count and set global cooldown
+            $user->cancellation_count = ($user->cancellation_count ?? 0) + 1;
+            $baseGlobal = 2; // minutes
+            $penalty = $user->cancellation_count * 5; // minutes
+            $user->cooldown_all_until = now()->addMinutes($baseGlobal + $penalty);
+            $user->save();
+
+            DB::commit();
+            return redirect()->route('delivery.orders.my')->with('success', 'Order cancelled. You are on a temporary cooldown from accepting new orders.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Failed to cancel order.');
+        }
     }
 
     /**

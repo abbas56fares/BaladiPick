@@ -6,8 +6,24 @@
 <div class="row">
     <div class="col-md-8">
         <div class="card">
-            <div class="card-header">
-                <h4>Order #{{ $order->id }} Details</h4>
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">Order #{{ $order->id }} Details</h4>
+                <div class="d-flex gap-2">
+                    @if(($order->qr_verified || $order->status === 'in_transit') && $order->client_lat && $order->client_lng)
+                        <button type="button" class="btn btn-secondary"
+                            onclick="showDeliveryRouteTo({{ $order->client_lat }}, {{ $order->client_lng }}, '{{ $order->client_name }}')">
+                            <i class="bi bi-geo-alt"></i> View Location
+                        </button>
+                        <button type="button" class="btn btn-primary"
+                            onclick="openMobileMaps({{ $order->client_lat }}, {{ $order->client_lng }}, '{{ $order->client_name }}')">
+                            <i class="bi bi-compass"></i> Open Maps on Mobile
+                        </button>
+                        <button type="button" class="btn btn-outline-success"
+                            onclick="openShareModal({{ $order->client_lat }}, {{ $order->client_lng }}, '{{ $order->client_name }}', {{ $order->id }})">
+                            <i class="bi bi-whatsapp"></i> Share via WhatsApp
+                        </button>
+                    @endif
+                </div>
             </div>
             <div class="card-body">
                 <div class="row mb-3">
@@ -86,7 +102,14 @@
                     </div>
                 @endif
 
-                <a href="{{ route('delivery.orders.my') }}" class="btn btn-secondary">Back to My Orders</a>
+                @if($order->status === 'pending')
+                    <form action="{{ route('delivery.orders.cancel', $order->id) }}" method="POST" class="d-inline">
+                        @csrf
+                        <button type="submit" class="btn btn-outline-danger" onclick="return confirm('Cancel this accepted order? It will return to the pool and a cooldown will apply.')">
+                            Cancel Order
+                        </button>
+                    </form>
+                @endif
 
                 <a href="{{ route('delivery.orders.my') }}" class="btn btn-secondary">Back to My Orders</a>
             </div>
@@ -148,3 +171,194 @@
     </div>
 </div>
 @endsection
+
+<!-- Location Map Modal -->
+<div class="modal fade" id="deliveryLocationModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="width: 650px; max-width: 100%;">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deliveryLocationModalTitle">Route</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div id="orderDeliveryMap" style="width: 100%; height: 650px;"></div>
+            </div>
+        </div>
+    </div>
+    <div class="px-3 pb-3 text-muted small" id="deliveryLocationStatus" style="display:none;"></div>
+</div>
+
+@push('styles')
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+@endpush
+
+@push('scripts')
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+let deliveryMap = null;
+let youMarker = null;
+let destMarker = null;
+let routeLayer = null;
+
+function showDeliveryRouteTo(targetLat, targetLng, clientName) {
+    const statusEl = document.getElementById('deliveryLocationStatus');
+    statusEl.style.display = 'none';
+    statusEl.textContent = '';
+
+    if (!navigator.geolocation) {
+        statusEl.textContent = 'Geolocation is not available in your browser.';
+        statusEl.style.display = 'block';
+    }
+
+    const modal = new bootstrap.Modal(document.getElementById('deliveryLocationModal'));
+    document.getElementById('deliveryLocationModalTitle').textContent = 'Your Location → ' + clientName;
+    modal.show();
+
+    navigator.geolocation.getCurrentPosition(function(pos) {
+        const curLat = pos.coords.latitude;
+        const curLng = pos.coords.longitude;
+
+        setTimeout(() => {
+            if (deliveryMap) {
+                deliveryMap.remove();
+            }
+
+            const bounds = L.latLngBounds([
+                [curLat, curLng],
+                [targetLat, targetLng]
+            ]);
+
+            deliveryMap = L.map('orderDeliveryMap');
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(deliveryMap);
+
+            youMarker = L.marker([curLat, curLng], { title: 'Your Location' }).addTo(deliveryMap)
+                .bindPopup('<b>Your Location</b>').openPopup();
+
+            destMarker = L.marker([targetLat, targetLng], { title: 'Destination: ' + clientName }).addTo(deliveryMap)
+                .bindPopup('<b>Destination</b><br>' + clientName);
+
+            const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${curLng},${curLat};${targetLng},${targetLat}?overview=full&geometries=geojson`;
+
+            fetch(osrmUrl)
+                .then(res => res.json())
+                .then(data => {
+                    if (data && data.routes && data.routes.length > 0) {
+                        const geometry = data.routes[0].geometry;
+                        const feature = { type: 'Feature', properties: {}, geometry };
+                        routeLayer = L.geoJSON(feature, { style: { color: '#0d6efd', weight: 4, opacity: 0.9 } }).addTo(deliveryMap);
+                        deliveryMap.fitBounds(routeLayer.getBounds(), { padding: [30, 30] });
+                    } else {
+                        // Fallback: straight line
+                        routeLayer = L.polyline([[curLat, curLng], [targetLat, targetLng]], { color: '#0d6efd', weight: 4, opacity: 0.85 }).addTo(deliveryMap);
+                        deliveryMap.fitBounds(bounds, { padding: [30, 30] });
+                    }
+                })
+                .catch(() => {
+                    routeLayer = L.polyline([[curLat, curLng], [targetLat, targetLng]], { color: '#0d6efd', weight: 4, opacity: 0.85 }).addTo(deliveryMap);
+                    deliveryMap.fitBounds(bounds, { padding: [30, 30] });
+                });
+        }, 300);
+    }, function(err) {
+        statusEl.textContent = 'Could not get your location: ' + err.message;
+        statusEl.style.display = 'block';
+    }, { enableHighAccuracy: true, timeout: 10000 });
+}
+</script>
+<script>
+// WhatsApp share modal and logic
+function openMobileMaps(lat, lng, clientName) {
+    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const isAndroid = /Android/i.test(navigator.userAgent);
+
+    // Prefer native apps; fall back to web Google Maps
+    const iosUrl = `http://maps.apple.com/?daddr=${lat},${lng}&dirflg=d`;
+    const androidUrl = `google.navigation:q=${lat},${lng}`;
+    const webUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
+
+    let target = webUrl;
+    if (isIOS) {
+        target = iosUrl;
+    } else if (isAndroid) {
+        target = androidUrl;
+    }
+
+    // Attempt deep link; if it doesn't resolve, fall back to web
+    const start = Date.now();
+    window.location.href = target;
+    setTimeout(function () {
+        if (Date.now() - start < 1600) {
+            window.location.href = webUrl;
+        }
+    }, 1500);
+}
+
+function openShareModal(lat, lng, clientName, orderId) {
+    const modalEl = document.getElementById('whatsAppShareModal');
+    if (!modalEl) return;
+    // Populate hidden fields
+    document.getElementById('wa-lat').value = lat;
+    document.getElementById('wa-lng').value = lng;
+    document.getElementById('wa-client').value = clientName;
+    document.getElementById('wa-order').value = orderId;
+    document.getElementById('wa-title').textContent = 'Share Destination for Order #' + orderId;
+    // Prefill phone from server if present
+    const phoneInput = document.getElementById('wa-phone');
+    phoneInput.value = '{{ auth()->user()->phone ?? '' }}';
+    new bootstrap.Modal(modalEl).show();
+}
+
+function submitWhatsAppShare() {
+    const phoneRaw = document.getElementById('wa-phone').value || '';
+    const lat = document.getElementById('wa-lat').value;
+    const lng = document.getElementById('wa-lng').value;
+    const clientName = document.getElementById('wa-client').value;
+    const orderId = document.getElementById('wa-order').value;
+
+    // Sanitize phone: digits only for wa.me format; user must include country code
+    const phone = (phoneRaw.match(/\d+/g) || []).join('');
+    if (!phone || phone.length < 8) {
+        alert('Please enter a valid phone number in international format (e.g., 9627XXXXXXXX).');
+        return false;
+    }
+
+    const mapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
+    const text = encodeURIComponent(
+        `Order #${orderId} destination for ${clientName}\nMaps: ${mapsUrl}`
+    );
+    const waUrl = `https://wa.me/${phone}?text=${text}`;
+    window.open(waUrl, '_blank');
+    return true;
+}
+</script>
+@endpush
+
+<!-- WhatsApp Share Modal -->
+<div class="modal fade" id="whatsAppShareModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="wa-title">Share Destination</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="wa-phone" class="form-label">Delivery Phone (WhatsApp)</label>
+                    <input type="text" class="form-control" id="wa-phone" placeholder="Enter phone in international format (digits only)">
+                    <div class="form-text">Example: 9627XXXXXXXX (no leading zeros or +)</div>
+                </div>
+                <div class="d-flex justify-content-end">
+                    <button type="button" class="btn btn-success" onclick="submitWhatsAppShare()">
+                        <i class="bi bi-whatsapp"></i> Share
+                    </button>
+                </div>
+                <input type="hidden" id="wa-lat">
+                <input type="hidden" id="wa-lng">
+                <input type="hidden" id="wa-client">
+                <input type="hidden" id="wa-order">
+            </div>
+        </div>
+    </div>
+</div>

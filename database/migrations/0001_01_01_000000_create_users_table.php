@@ -20,6 +20,8 @@ return new class extends Migration
             $table->string('phone')->nullable();
             $table->enum('role', ['admin', 'shop', 'delivery'])->default('shop');
             $table->boolean('verified')->default(false);
+            $table->unsignedInteger('cancellation_count')->default(0);
+            $table->timestamp('cooldown_all_until')->nullable();
             $table->string('id_document_path')->nullable();
             $table->rememberToken();
             $table->timestamps();
