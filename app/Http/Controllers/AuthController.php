@@ -69,6 +69,7 @@ class AuthController extends Controller
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
             'phone' => 'required|string|max:20',
+            'timezone' => 'required|string|timezone',
             'role' => 'required|in:shop,delivery',
             'id_document' => 'required|image|mimes:jpeg,png,jpg,gif|max:5120',
         ]);
@@ -84,6 +85,7 @@ class AuthController extends Controller
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
             'phone' => $validated['phone'],
+                        'timezone' => $validated['timezone'],
             'role' => $validated['role'],
             'verified' => false,
             'id_document_path' => $filePath,

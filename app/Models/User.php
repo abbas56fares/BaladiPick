@@ -22,6 +22,7 @@ class User extends Authenticatable
         'email',
         'password',
         'phone',
+        'timezone',
         'role',
         'verified',
         'cancellation_count',

@@ -39,7 +39,78 @@ class Order extends Model
         'qr_verified_at' => 'datetime',
         'delivery_verified' => 'boolean',
         'delivery_verified_at' => 'datetime',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
     ];
+
+    /**
+     * Get created_at in user's timezone
+     */
+    protected function createdAt(): \Illuminate\Database\Eloquent\Casts\Attribute
+    {
+        return \Illuminate\Database\Eloquent\Casts\Attribute::make(
+            get: function ($value) {
+                if (!$value) return null;
+                $carbon = \Carbon\Carbon::parse($value);
+                if (auth()->check() && auth()->user()->timezone) {
+                    return $carbon->timezone(auth()->user()->timezone);
+                }
+                return $carbon;
+            }
+        );
+    }
+
+    /**
+     * Get updated_at in user's timezone
+     */
+    protected function updatedAt(): \Illuminate\Database\Eloquent\Casts\Attribute
+    {
+        return \Illuminate\Database\Eloquent\Casts\Attribute::make(
+            get: function ($value) {
+                if (!$value) return null;
+                $carbon = \Carbon\Carbon::parse($value);
+                if (auth()->check() && auth()->user()->timezone) {
+                    return $carbon->timezone(auth()->user()->timezone);
+                }
+                return $carbon;
+            }
+        );
+    }
+
+    /**
+     * Get qr_verified_at in user's timezone
+     */
+    protected function qrVerifiedAt(): \Illuminate\Database\Eloquent\Casts\Attribute
+    {
+        return \Illuminate\Database\Eloquent\Casts\Attribute::make(
+            get: function ($value) {
+                if (!$value) return null;
+                $carbon = \Carbon\Carbon::parse($value);
+                if (auth()->check() && auth()->user()->timezone) {
+                    return $carbon->timezone(auth()->user()->timezone);
+                }
+                return $carbon;
+            }
+        );
+    }
+
+    /**
+     * Get delivery_verified_at in user's timezone
+     */
+    protected function deliveryVerifiedAt(): \Illuminate\Database\Eloquent\Casts\Attribute
+    {
+        return \Illuminate\Database\Eloquent\Casts\Attribute::make(
+            get: function ($value) {
+                if (!$value) return null;
+                $carbon = \Carbon\Carbon::parse($value);
+                if (auth()->check() && auth()->user()->timezone) {
+                    return $carbon->timezone(auth()->user()->timezone);
+                }
+                return $carbon;
+            }
+        );
+    }
+
 
     /**
      * Relationship: Order belongs to Shop

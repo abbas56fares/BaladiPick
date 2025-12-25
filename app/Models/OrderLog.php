@@ -16,6 +16,29 @@ class OrderLog extends Model
         'note',
     ];
 
+    protected $casts = [
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+    ];
+
+    /**
+     * Get created_at in user's timezone
+     */
+    protected function createdAt(): \Illuminate\Database\Eloquent\Casts\Attribute
+    {
+        return \Illuminate\Database\Eloquent\Casts\Attribute::make(
+            get: function ($value) {
+                if (!$value) return null;
+                $carbon = \Carbon\Carbon::parse($value);
+                if (auth()->check() && auth()->user()->timezone) {
+                    return $carbon->timezone(auth()->user()->timezone);
+                }
+                return $carbon;
+            }
+        );
+    }
+
+
     /**
      * Relationship: Log belongs to Order
      */
