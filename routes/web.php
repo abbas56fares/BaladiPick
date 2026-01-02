@@ -35,13 +35,16 @@ Route::middleware(['auth', 'role:shop'])->prefix('shop')->name('shop.')->group(f
     Route::put('/orders/{id}', [ShopController::class, 'updateOrder'])->name('orders.update');
     Route::post('/orders/{id}/cancel', [ShopController::class, 'cancelOrder'])->name('orders.cancel');
     Route::post('/orders/{id}/verify-pickup', [ShopController::class, 'verifyPickup'])->name('orders.verify-pickup');
+    Route::post('/orders/verify-pickup-api', [ShopController::class, 'verifyPickupApi'])->name('orders.verify-pickup-api');
 });
 
 // Delivery Routes
 Route::middleware(['auth', 'role:delivery'])->prefix('delivery')->name('delivery.')->group(function () {
     Route::get('/dashboard', [DeliveryController::class, 'dashboard'])->name('dashboard');
     Route::get('/map', [DeliveryController::class, 'map'])->name('map');
+    Route::get('/accepted-orders-map', [DeliveryController::class, 'acceptedOrdersMap'])->name('accepted.orders.map');
     Route::get('/orders/available', [DeliveryController::class, 'availableOrders'])->name('orders.available');
+    Route::get('/orders/accepted', [DeliveryController::class, 'acceptedOrders'])->name('orders.accepted');
     Route::post('/orders/{id}/accept', [DeliveryController::class, 'acceptOrder'])->name('orders.accept');
     Route::post('/orders/{id}/cancel', [DeliveryController::class, 'cancelOrder'])->name('orders.cancel');
     Route::get('/orders/my', [DeliveryController::class, 'myOrders'])->name('orders.my');

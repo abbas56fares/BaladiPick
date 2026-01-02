@@ -5,6 +5,18 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property int $id
+ * @property int $user_id
+ * @property string $shop_name
+ * @property string $phone
+ * @property string $address
+ * @property string $latitude
+ * @property string $longitude
+ * @property bool $is_verified
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ */
 class Shop extends Model
 {
     use HasFactory;

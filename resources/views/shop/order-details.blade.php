@@ -77,13 +77,17 @@
                     <div class="card bg-light mb-3 border-warning">
                         <div class="card-body">
                             <h5>Pickup Confirmation</h5>
-                            <p class="text-muted">Delivery has accepted this order. Enter the QR code to confirm pickup.</p>
-                            <p><strong>QR Code:</strong> <code class="bg-white p-2">{{ $order->qr_code }}</code></p>
+                            <p class="text-muted">Delivery has accepted this order. Scan the QR code from the delivery driver's device to confirm pickup.</p>
+                            <div class="mb-3">
+                                <button class="btn btn-info w-100" data-bs-toggle="modal" data-bs-target="#qrScannerModal">
+                                    <i class="bi bi-camera"></i> Open QR Scanner
+                                </button>
+                            </div>
                             <form action="{{ route('shop.orders.verify-pickup', $order->id) }}" method="POST">
                                 @csrf
                                 <div class="input-group">
                                     <input type="text" class="form-control" name="qr_code" 
-                                           placeholder="Scan or enter the QR code" required autofocus>
+                                           placeholder="Or scan/enter the QR code manually" autofocus>
                                     <button type="submit" class="btn btn-success">Confirm Pickup</button>
                                 </div>
                                 @error('qr_code')
@@ -143,3 +147,86 @@
     </div>
 </div>
 @endsection
+
+<!-- QR Scanner Modal for Order Details -->
+<div class="modal fade" id="qrScannerModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Scan QR Code - Order #{{ $order->id }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="qr-scanner-order" style="width: 100%;"></div>
+                <div id="scanner-status-order" class="mt-3 text-muted text-center">
+                    <p>Initializing camera...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@push('styles')
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.4/dist/html5-qrcode.min.css">
+@endpush
+
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.4/dist/html5-qrcode.min.js"></script>
+<script>
+let html5QrcodeScannerOrder = null;
+const orderModalEl = document.getElementById('qrScannerModal');
+
+orderModalEl.addEventListener('shown.bs.modal', function() {
+    document.getElementById('scanner-status-order').innerHTML = '<p class="text-info">Starting camera...</p>';
+    
+    setTimeout(() => {
+        if (!html5QrcodeScannerOrder) {
+            html5QrcodeScannerOrder = new Html5Qrcode("qr-scanner-order");
+            
+            html5QrcodeScannerOrder.start(
+                { facingMode: "environment" },
+                {
+                    fps: 10,
+                    qrbox: { width: 250, height: 250 }
+                },
+                onScanSuccessOrder,
+                onScanFailureOrder
+            ).then(() => {
+                document.getElementById('scanner-status-order').innerHTML = '<p class="text-success">Camera ready. Point at QR code.</p>';
+            }).catch(err => {
+                document.getElementById('scanner-status-order').innerHTML = '<p class="text-danger">Camera access denied or unavailable. Please check permissions.</p>';
+                console.error('Camera error:', err);
+            });
+        }
+    }, 300);
+});
+
+orderModalEl.addEventListener('hide.bs.modal', function() {
+    if (html5QrcodeScannerOrder) {
+        html5QrcodeScannerOrder.stop().then(() => {
+            html5QrcodeScannerOrder.clear();
+            html5QrcodeScannerOrder = null;
+        }).catch(err => {
+            console.log('Stop error:', err);
+            html5QrcodeScannerOrder = null;
+        });
+    }
+});
+
+function onScanSuccessOrder(decodedText, decodedResult) {
+    // Auto-fill the form input and submit
+    document.querySelector('input[name="qr_code"]').value = decodedText;
+    
+    // Close modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('qrScannerModal'));
+    modal.hide();
+    
+    // Submit the form
+    document.querySelector('form').submit();
+}
+
+function onScanFailureOrder(error) {
+    // Silently handle scan failures
+}
+</script>
+@endpush

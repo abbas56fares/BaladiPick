@@ -46,6 +46,14 @@ class DeliveryController extends Controller
     }
 
     /**
+     * Show map view with accepted orders (pending and in_transit)
+     */
+    public function acceptedOrdersMap()
+    {
+        return view('delivery.accepted-orders-map');
+    }
+
+    /**
      * Get available orders near delivery (JSON)
      */
     public function availableOrders(Request $request)
@@ -83,6 +91,31 @@ class DeliveryController extends Controller
             'shops' => $shopsWithOrders,
             'orders' => $orders // Keep original orders for table
         ]);
+    }
+
+    /**
+     * Get delivery person's accepted orders (JSON)
+     */
+    public function acceptedOrders(Request $request)
+    {
+        try {
+            $orders = Auth::user()->deliveryOrders()
+                ->whereIn('status', ['pending', 'in_transit'])
+                ->with('shop')
+                ->latest()
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'orders' => $orders
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'orders' => [],
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**

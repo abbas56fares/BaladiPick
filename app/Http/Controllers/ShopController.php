@@ -350,6 +350,77 @@ class ShopController extends Controller
     }
 
     /**
+     * Verify pickup via QR scanner (API endpoint)
+     */
+    public function verifyPickupApi(Request $request)
+    {
+        $shop = Auth::user()->shop;
+        
+        $request->validate([
+            'order_id' => 'required|integer',
+            'qr_code' => 'required|string',
+        ]);
+
+        $order = $shop->orders()->find($request->order_id);
+
+        if (!$order) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Order not found.'
+            ], 404);
+        }
+
+        if ($order->status !== 'pending') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Order is not in pending status.'
+            ], 400);
+        }
+
+        if ($request->qr_code !== $order->qr_code) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid QR code.'
+            ], 400);
+        }
+
+        DB::beginTransaction();
+        
+        try {
+            // Generate OTP for delivery
+            $otp = str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT);
+            
+            $order->update([
+                'qr_verified' => true,
+                'qr_verified_at' => now(),
+                'delivery_otp' => $otp,
+                'status' => 'in_transit',
+            ]);
+
+            OrderLog::create([
+                'order_id' => $order->id,
+                'changed_by' => Auth::id(),
+                'status' => 'in_transit',
+                'note' => 'QR verified by shop via scanner. Package picked up by delivery.',
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Pickup confirmed! OTP: ' . $otp,
+                'order_id' => $order->id
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to verify pickup: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Show big map with available orders
      */
     public function ordersMap()
@@ -359,22 +430,28 @@ class ShopController extends Controller
     }
 
     /**
-     * Provide available orders as geo JSON
+     * Provide available orders as geo JSON (only for logged-in shop)
      */
     public function ordersMapData()
     {
-        $orders = Order::where('status', 'available')
-            ->select('id', 'shop_id', 'shop_lat', 'shop_lng', 'vehicle_type', 'profit', 'created_at')
-            ->with(['shop:id,shop_name'])
+        $shop = Auth::user()->shop;
+        
+        $orders = Order::where('shop_id', $shop->id)
+            ->whereIn('status', ['available', 'pending', 'in_transit'])
+            ->select('id', 'shop_id', 'client_lat', 'client_lng', 'client_name', 'client_phone', 'vehicle_type', 'profit', 'status', 'created_at')
+            ->with(['delivery:id,name'])
             ->get()
             ->map(function ($order) {
                 return [
                     'id' => $order->id,
-                    'shop' => $order->shop ? $order->shop->shop_name : 'Unknown shop',
-                    'lat' => (float) $order->shop_lat,
-                    'lng' => (float) $order->shop_lng,
+                    'client_name' => $order->client_name,
+                    'client_phone' => $order->client_phone,
+                    'lat' => (float) $order->client_lat,
+                    'lng' => (float) $order->client_lng,
                     'vehicle_type' => $order->vehicle_type,
                     'profit' => (float) $order->profit,
+                    'status' => $order->status,
+                    'delivery' => $order->delivery ? $order->delivery->name : null,
                     'created_at' => $order->created_at->toDateTimeString(),
                 ];
             });

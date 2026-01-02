@@ -9,18 +9,33 @@
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h4 class="mb-0">Order #{{ $order->id }} Details</h4>
                 <div class="d-flex gap-2">
-                    @if(($order->qr_verified || $order->status === 'in_transit') && $order->client_lat && $order->client_lng)
+                    @if($order->status === 'pending' && $order->shop_lat && $order->shop_lng)
+                        {{-- Navigation to shop for pickup --}}
+                        <button type="button" class="btn btn-secondary"
+                            onclick="showDeliveryRouteTo({{ $order->shop_lat }}, {{ $order->shop_lng }}, '{{ $order->shop->shop_name }}')">
+                            <i class="bi bi-geo-alt"></i> Navigate to Shop
+                        </button>
+                        <button type="button" class="btn btn-primary"
+                            onclick="openMobileMaps({{ $order->shop_lat }}, {{ $order->shop_lng }}, '{{ $order->shop->shop_name }}')">
+                            <i class="bi bi-compass"></i> Open Maps (Shop)
+                        </button>
+                        <button type="button" class="btn btn-outline-success"
+                            onclick="openShareModal({{ $order->shop_lat }}, {{ $order->shop_lng }}, '{{ $order->shop->shop_name }}', {{ $order->id }})">
+                            <i class="bi bi-whatsapp"></i> Share Shop Location
+                        </button>
+                    @elseif(($order->qr_verified || $order->status === 'in_transit') && $order->client_lat && $order->client_lng)
+                        {{-- Navigation to client for delivery --}}
                         <button type="button" class="btn btn-secondary"
                             onclick="showDeliveryRouteTo({{ $order->client_lat }}, {{ $order->client_lng }}, '{{ $order->client_name }}')">
-                            <i class="bi bi-geo-alt"></i> View Location
+                            <i class="bi bi-geo-alt"></i> Navigate to Client
                         </button>
                         <button type="button" class="btn btn-primary"
                             onclick="openMobileMaps({{ $order->client_lat }}, {{ $order->client_lng }}, '{{ $order->client_name }}')">
-                            <i class="bi bi-compass"></i> Open Maps on Mobile
+                            <i class="bi bi-compass"></i> Open Maps (Client)
                         </button>
                         <button type="button" class="btn btn-outline-success"
                             onclick="openShareModal({{ $order->client_lat }}, {{ $order->client_lng }}, '{{ $order->client_name }}', {{ $order->id }})">
-                            <i class="bi bi-whatsapp"></i> Share via WhatsApp
+                            <i class="bi bi-whatsapp"></i> Share Client Location
                         </button>
                     @endif
                 </div>
@@ -69,7 +84,10 @@
                         <div class="card-body">
                             <h5>Pickup Verification</h5>
                             <p class="text-muted">The shop will verify pickup using this QR code.</p>
-                            <p><strong>QR Code:</strong> <code class="bg-white p-2">{{ $order->qr_code }}</code></p>
+                            <div class="text-center">
+                                {!! \SimpleSoftwareIO\QrCode\Facades\QrCode::size(200)->generate($order->qr_code) !!}
+                                <p class="mt-2"><small class="text-muted">{{ $order->qr_code }}</small></p>
+                            </div>
                         </div>
                     </div>
                 @endif

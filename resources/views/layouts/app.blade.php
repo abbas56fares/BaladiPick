@@ -39,10 +39,13 @@
                                 <a class="nav-link" href="{{ route('delivery.dashboard') }}">Dashboard</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" href="{{ route('delivery.map') }}">Map</a>
+                                <a class="nav-link" href="{{ route('delivery.map') }}">Available Orders</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" href="{{ route('delivery.orders.my') }}">My Orders</a>
+                                <a class="nav-link" href="{{ route('delivery.accepted.orders.map') }}">My Accepted Orders</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ route('delivery.orders.my') }}">Orders List</a>
                             </li>
                         @elseif(auth()->user()->isAdmin())
                             @php

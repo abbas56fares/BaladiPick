@@ -1,12 +1,12 @@
 @extends('layouts.app')
 
-@section('title', 'Available Orders Map')
+@section('title', 'Delivery Map')
 
 @section('content')
 <div class="row">
     <div class="col-12">
-        <h2>Available Orders</h2>
-        <p class="text-muted">Browse and accept delivery orders</p>
+        <h2>Delivery Orders Map</h2>
+        <p class="text-muted">Browse available orders and manage your accepted orders</p>
     </div>
 </div>
 
@@ -14,12 +14,12 @@
     <div class="col-12">
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Available Orders <span id="shop-filter-badge" class="badge bg-info" style="display:none;"></span></h5>
-                <button id="reset-view-btn" class="btn btn-sm btn-secondary" style="display:none;">Show All Shops</button>
+                <h5 class="mb-0">Your Accepted Orders <span id="shop-filter-badge" class="badge bg-info" style="display:none;"></span></h5>
+                <button id="reset-view-btn" class="btn btn-sm btn-secondary" style="display:none;">View Available</button>
             </div>
             <div class="card-body">
                 <div id="orders-list">
-                    <p class="text-center">Loading available orders...</p>
+                    <p class="text-center">Loading your accepted orders...</p>
                 </div>
             </div>
         </div>
@@ -210,45 +210,65 @@ document.addEventListener('DOMContentLoaded', function () {
     resetBtn.addEventListener('click', function() {
         selectedShop = null;
         if (allData) {
-            renderTable(allData.orders);
-            renderMap(allData.shops);
+            renderTable(allData.orders, false); // Show available orders
+            renderMap(allData.shops, allData.orders);
             shopFilterBadge.style.display = 'none';
             resetBtn.style.display = 'none';
             addDeliveryMarker(); // Re-add delivery marker
         }
     });
 
-    function renderTable(orders) {
+    function renderTable(orders, isAccepted = false) {
         const container = document.getElementById('orders-list');
         if (!orders || orders.length === 0) {
-            container.innerHTML = '<p class="text-muted text-center">No available orders at the moment.</p>';
+            const msg = isAccepted 
+                ? '<p class="text-muted text-center">You have not accepted any orders yet. <br><strong>Click on order red icons on the map to accept them.</strong></p>'
+                : '<p class="text-muted text-center">No available orders at the moment.</p>';
+            container.innerHTML = msg;
             return;
         }
         let html = '<div class="table-responsive"><table class="table table-hover">';
         html += '<thead><tr>';
-        html += '<th>Order ID</th><th>Shop</th><th>Client</th><th>Location</th><th>Vehicle</th><th>Profit</th><th>Action</th>';
+        if (isAccepted) {
+            html += '<th>Order ID</th><th>Shop</th><th>Client</th><th>Vehicle</th><th>Profit</th><th>Status</th><th>Action</th>';
+        } else {
+            html += '<th>Order ID</th><th>Shop</th><th>Client</th><th>Location</th><th>Vehicle</th><th>Profit</th><th>Action</th>';
+        }
         html += '</tr></thead><tbody>';
         orders.forEach(order => {
             html += '<tr>';
             html += `<td>#${order.id}</td>`;
-            html += `<td>${order.shop.shop_name}</td>`;
+            html += `<td>${order.shop ? order.shop.shop_name : 'N/A'}</td>`;
             html += `<td>${order.client_name}</td>`;
-            html += `<td>${order.client_lat}, ${order.client_lng}</td>`;
+            if (!isAccepted) {
+                html += `<td>${order.client_lat}, ${order.client_lng}</td>`;
+            }
             html += `<td><span class="badge bg-secondary">${order.vehicle_type}</span></td>`;
             html += `<td>$${parseFloat(order.profit).toFixed(2)}</td>`;
-            html += `<td>
-                <form action="/delivery/orders/${order.id}/accept" method="POST" style="display:inline;">
-                    <input type="hidden" name="_token" value="{{ csrf_token() }}">
-                    <button type="submit" class="btn btn-sm btn-success">Accept</button>
-                </form>
-            </td>`;
+            if (isAccepted) {
+                const statusBadge = order.status === 'pending' ? 'warning' : (order.status === 'in_transit' ? 'info' : 'success');
+                const statusText = order.status.replace('_', ' ');
+                html += `<td><span class="badge bg-${statusBadge}">${statusText}</span></td>`;
+            }
+            html += `<td>`;
+            if (isAccepted) {
+                html += `<a href="/delivery/orders/${order.id}" class="btn btn-sm btn-primary">View</a>`;
+            } else {
+                html += `
+                    <form action="/delivery/orders/${order.id}/accept" method="POST" style="display:inline;">
+                        <input type="hidden" name="_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-sm btn-success">Accept</button>
+                    </form>
+                `;
+            }
+            html += `</td>`;
             html += '</tr>';
         });
         html += '</tbody></table></div>';
         container.innerHTML = html;
     }
 
-    function renderMap(shops) {
+    function renderMap(shops, availableOrders) {
         markers.clearLayers();
         if (!shops || shops.length === 0) {
             countLabel.textContent = 'No shops with available orders.';
@@ -274,6 +294,28 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
             markers.addLayer(marker);
         });
+
+        // Add order markers
+        if (availableOrders && availableOrders.length > 0) {
+            availableOrders.forEach(order => {
+                if (!order.client_lat || !order.client_lng) return;
+                
+                const marker = L.marker([order.client_lat, order.client_lng], { icon: orderDotIcon })
+                    .bindPopup(`
+                        <strong>Order #${order.id}</strong><br>
+                        Client: ${order.client_name}<br>
+                        Phone: ${order.client_phone}<br>
+                        Shop: ${order.shop.shop_name}<br>
+                        Vehicle: ${order.vehicle_type}<br>
+                        Profit: $${parseFloat(order.profit).toFixed(2)}<br>
+                        <button class="btn btn-sm btn-success mt-2" onclick="window.acceptOrderFromMap(${order.id})">Accept Order</button>
+                    `)
+                    .on('click', function() {
+                        drawRouteTo(order.client_lat, order.client_lng);
+                    });
+                markers.addLayer(marker);
+            });
+        }
         
         const bounds = markers.getBounds();
         if (bounds && bounds.isValid()) {
@@ -284,13 +326,35 @@ document.addEventListener('DOMContentLoaded', function () {
         addDeliveryMarker(); // Keep delivery marker visible
     }
 
-    function renderShopOrders(shop) {
+    function renderShopOrders(shop, availableOrders) {
+        // Clear existing markers and re-render all shops + only this shop's orders
         markers.clearLayers();
         
-        let orderCount = 0;
-        shop.orders.forEach(order => {
+        // Re-add all shop markers
+        if (allData && allData.shops) {
+            allData.shops.forEach(s => {
+                if (!s.latitude || !s.longitude) return;
+                
+                let popupContent = `
+                    <strong>${s.shop_name}</strong><br>
+                    <small><i class="bi bi-telephone"></i> ${s.shop_phone}</small><br>
+                    <span class="badge bg-danger mt-1">${s.available_orders_count} Available Order${s.available_orders_count > 1 ? 's' : ''}</span><br>
+                    <button class="btn btn-sm btn-primary mt-2" onclick="window.showShopOrders(${s.shop_id})">View Orders</button>
+                `;
+                
+                const marker = L.marker([s.latitude, s.longitude], { icon: shopIcon })
+                    .bindPopup(popupContent)
+                    .on('click', function() {
+                        drawRouteTo(s.latitude, s.longitude);
+                    });
+                markers.addLayer(marker);
+            });
+        }
+        
+        // Add order markers ONLY for the selected shop
+        const shopOrdersFiltered = availableOrders.filter(o => o.shop_id === shop.shop_id);
+        shopOrdersFiltered.forEach(order => {
             if (!order.client_lat || !order.client_lng) return;
-            orderCount++;
             
             const marker = L.marker([order.client_lat, order.client_lng], { icon: orderDotIcon })
                 .bindPopup(`
@@ -298,7 +362,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     Client: ${order.client_name}<br>
                     Phone: ${order.client_phone}<br>
                     Vehicle: ${order.vehicle_type}<br>
-                    Profit: $${parseFloat(order.profit).toFixed(2)}
+                    Profit: $${parseFloat(order.profit).toFixed(2)}<br>
+                    <button class="btn btn-sm btn-success mt-2" onclick="window.acceptOrderFromMap(${order.id})">Accept Order</button>
                 `)
                 .on('click', function() {
                     drawRouteTo(order.client_lat, order.client_lng);
@@ -306,25 +371,22 @@ document.addEventListener('DOMContentLoaded', function () {
             markers.addLayer(marker);
         });
 
-        // Keep the selected shop visible
+        // Highlight the selected shop
         if (shop.latitude && shop.longitude) {
-            const shopMarker = L.marker([shop.latitude, shop.longitude], { icon: shopIcon })
-                .bindPopup(`
-                    <strong>${shop.shop_name}</strong><br>
-                    <small><i class="bi bi-telephone"></i> ${shop.shop_phone}</small>
-                `)
-                .on('click', function() {
-                    drawRouteTo(shop.latitude, shop.longitude);
-                });
-            markers.addLayer(shopMarker);
+            const bounds = L.latLngBounds(
+                [[shop.latitude, shop.longitude]],
+                shopOrdersFiltered.length > 0 
+                    ? shopOrdersFiltered.map(o => [o.client_lat, o.client_lng])
+                    : []
+            );
+            
+            if (bounds.isValid()) {
+                map.fitBounds(bounds.pad(0.2));
+            }
         }
         
-        const bounds = markers.getBounds();
-        if (bounds && bounds.isValid()) {
-            map.fitBounds(bounds.pad(0.2));
-        }
-        
-        countLabel.textContent = `Showing ${orderCount} order${orderCount > 1 ? 's' : ''} from ${shop.shop_name}`;
+        const orderCount = shopOrdersFiltered.length;
+        countLabel.textContent = `Showing ${orderCount} order${orderCount > 1 ? 's' : ''} from ${shop.shop_name} | All shops still visible`;
         shopFilterBadge.textContent = shop.shop_name;
         shopFilterBadge.style.display = 'inline-block';
         resetBtn.style.display = 'inline-block';
@@ -340,45 +402,85 @@ document.addEventListener('DOMContentLoaded', function () {
         
         // Filter orders for this shop
         const shopOrders = allData.orders.filter(o => o.shop_id === shopId);
-        renderTable(shopOrders);
-        renderShopOrders(selectedShop);
+        renderTable(shopOrders, false); // Show available orders table
+        renderShopOrders(selectedShop, allData.orders);
+    };
+
+    window.acceptOrderFromMap = function(orderId) {
+        if (!confirm('Accept this order?')) return;
+        
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/delivery/orders/${orderId}/accept`;
+        
+        const token = document.createElement('input');
+        token.type = 'hidden';
+        token.name = '_token';
+        token.value = '{{ csrf_token() }}';
+        
+        form.appendChild(token);
+        document.body.appendChild(form);
+        form.submit();
     };
 
     function loadAvailableOrders() {
         fetch('{{ route("delivery.orders.available") }}')
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok: ' + response.status);
+                }
+                return response.json();
+            })
             .then(data => {
                 allData = data;
-                
-                // If a shop is selected, refresh its data
-                if (selectedShop) {
-                    const updatedShop = data.shops.find(s => s.shop_id === selectedShop.shop_id);
-                    if (updatedShop) {
-                        selectedShop = updatedShop;
-                        const shopOrders = data.orders.filter(o => o.shop_id === selectedShop.shop_id);
-                        renderTable(shopOrders);
-                        renderShopOrders(selectedShop);
-                    } else {
-                        // Shop no longer has orders, reset view
-                        selectedShop = null;
-                        renderTable(data.orders);
-                        renderMap(data.shops);
-                        shopFilterBadge.style.display = 'none';
-                        resetBtn.style.display = 'none';
-                    }
-                } else {
-                    renderTable(data.orders);
-                    renderMap(data.shops);
-                }
+                // Don't render table here, let loadAcceptedOrders handle it
+                renderMap(data.shops, data.orders);
             })
-            .catch(() => {
-                document.getElementById('orders-list').innerHTML = '<p class="text-danger text-center">Error loading orders. Please refresh.</p>';
+            .catch(error => {
+                console.error('Error loading available orders:', error);
                 countLabel.textContent = 'Could not load map data.';
             });
     }
 
-    loadAvailableOrders();
-    setInterval(loadAvailableOrders, 30000);
+    function loadAcceptedOrders() {
+        fetch('{{ route("delivery.orders.accepted") }}', {
+            credentials: 'same-origin',
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('HTTP ' + response.status + ': ' + response.statusText);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data && data.orders !== undefined) {
+                    renderTable(data.orders, true); // Show accepted orders
+                } else {
+                    console.error('Invalid data structure:', data);
+                    document.getElementById('orders-list').innerHTML = '<p class="text-warning text-center">Invalid response format.</p>';
+                }
+            })
+            .catch(error => {
+                console.error('Error loading accepted orders:', error);
+                document.getElementById('orders-list').innerHTML = '<p class="text-danger text-center">Error: ' + error.message + '</p>';
+            });
+    }
+
+    // Load accepted orders first, then available orders after a short delay
+    loadAcceptedOrders();
+    setTimeout(() => {
+        loadAvailableOrders();
+    }, 500);
+    
+    // Refresh periodically
+    setInterval(() => {
+        loadAcceptedOrders();
+        loadAvailableOrders();
+    }, 30000);
 });
 </script>
 @endpush
