@@ -5,6 +5,28 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property int $id
+ * @property int $shop_id
+ * @property int|null $delivery_id
+ * @property string $client_name
+ * @property string $client_phone
+ * @property string $client_lat
+ * @property string $client_lng
+ * @property string $shop_lat
+ * @property string $shop_lng
+ * @property string $vehicle_type
+ * @property string $profit
+ * @property string $status
+ * @property string|null $qr_code
+ * @property bool $qr_verified
+ * @property \Carbon\Carbon|null $qr_verified_at
+ * @property string|null $delivery_otp
+ * @property bool $delivery_verified
+ * @property \Carbon\Carbon|null $delivery_verified_at
+ * @property \Carbon\Carbon $created_at
+ * @property \Carbon\Carbon $updated_at
+ */
 class Order extends Model
 {
     use HasFactory;

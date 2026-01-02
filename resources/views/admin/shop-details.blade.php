@@ -259,5 +259,12 @@ function showLocationMap(lat, lng, name) {
             .bindPopup('<b>' + name + '</b>').openPopup();
     }, 300);
 }
+
+// Auto-refresh every 15 seconds to show verification status changes
+setInterval(function() {
+    if ($('.modal.show').length === 0 && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+        location.reload();
+    }
+}, 15000); // 15 seconds
 </script>
 @endpush

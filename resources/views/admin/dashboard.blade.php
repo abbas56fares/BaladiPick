@@ -118,3 +118,12 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+// Auto-refresh page every 10 seconds to show real-time updates
+setInterval(function() {
+    location.reload();
+}, 10000);
+</script>
+@endpush

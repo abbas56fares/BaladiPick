@@ -234,5 +234,12 @@ function showOrderLocationMap(shopLat, shopLng, clientLat, clientLng, shopName, 
             });
     }, 300);
 }
+
+// Auto-refresh every 10 seconds to show order status and delivery changes
+setInterval(function() {
+    if ($('.modal.show').length === 0 && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+        location.reload();
+    }
+}, 10000); // 10 seconds
 </script>
 @endpush

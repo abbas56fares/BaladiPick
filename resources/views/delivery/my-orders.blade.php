@@ -68,4 +68,14 @@
         </div>
     </div>
 </div>
+
+<!-- Auto-refresh every 7 seconds to show order status updates -->
+<script>
+    setInterval(function() {
+        if ($('.modal.show').length === 0 && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+            location.reload();
+        }
+    }, 7000); // 7 seconds
+</script>
+
 @endsection

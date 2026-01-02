@@ -228,5 +228,12 @@ function onScanSuccessOrder(decodedText, decodedResult) {
 function onScanFailureOrder(error) {
     // Silently handle scan failures
 }
+
+// Auto-refresh every 5 seconds to show order status and delivery updates
+setInterval(function() {
+    if ($('.modal.show').length === 0 && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+        location.reload();
+    }
+}, 5000); // 5 seconds
 </script>
 @endpush

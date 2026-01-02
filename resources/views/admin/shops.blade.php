@@ -154,5 +154,10 @@ function showLocationMap(lat, lng, name) {
             .bindPopup('<b>' + name + '</b>').openPopup();
     }, 300);
 }
+
+// Auto-refresh page every 15 seconds to show real-time updates
+setInterval(function() {
+    location.reload();
+}, 15000);
 </script>
 @endpush

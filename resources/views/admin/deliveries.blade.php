@@ -99,4 +99,15 @@
         </div>
     </div>
 </div>
+
+<!-- Auto-refresh every 15 seconds to show verification status changes -->
+<script>
+    setInterval(function() {
+        // Check if there's an open modal or if we're in a form submission
+        if ($('.modal.show').length === 0 && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+            location.reload();
+        }
+    }, 15000); // 15 seconds
+</script>
+
 @endsection

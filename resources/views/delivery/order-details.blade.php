@@ -380,3 +380,12 @@ function submitWhatsAppShare() {
         </div>
     </div>
 </div>
+
+<!-- Auto-refresh every 5 seconds to show order status and delivery updates -->
+<script>
+    setInterval(function() {
+        if ($('.modal.show').length === 0 && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+            location.reload();
+        }
+    }, 5000); // 5 seconds
+</script>
