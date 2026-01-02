@@ -358,6 +358,9 @@ class ShopController extends Controller
 
             DB::commit();
 
+            // Broadcast order verification event to notify delivery and other clients
+            broadcast(new \App\Events\OrderVerified($order));
+
             // Here you would send SMS to client with OTP
             // For now, we just display it in a message
             return back()->with('success', 'Pickup confirmed! OTP sent to client at ' . $order->client_phone);
@@ -423,6 +426,9 @@ class ShopController extends Controller
             ]);
 
             DB::commit();
+
+            // Broadcast order verification event to notify delivery and other clients
+            broadcast(new \App\Events\OrderVerified($order));
 
             return response()->json([
                 'success' => true,

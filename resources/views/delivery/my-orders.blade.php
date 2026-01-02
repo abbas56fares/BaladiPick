@@ -15,13 +15,13 @@
                         <table class="table table-hover">
                             <thead>
                                 <tr>
-                                    <th>Order ID</th>
-                                    <th>Shop</th>
-                                    <th>Client</th>
-                                    <th>Vehicle</th>
-                                    <th>Profit</th>
-                                    <th>Status</th>
-                                    <th>Date</th>
+                                    <th class="sortable">Order ID</th>
+                                    <th class="sortable">Shop</th>
+                                    <th class="sortable">Client</th>
+                                    <th class="sortable">Vehicle</th>
+                                    <th class="sortable">Profit</th>
+                                    <th class="sortable">Status</th>
+                                    <th class="sortable">Date</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
@@ -68,14 +68,4 @@
         </div>
     </div>
 </div>
-
-<!-- Auto-refresh every 7 seconds to show order status updates -->
-<script>
-    setInterval(function() {
-        if ($('.modal.show').length === 0 && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
-            location.reload();
-        }
-    }, 7000); // 7 seconds
-</script>
-
 @endsection

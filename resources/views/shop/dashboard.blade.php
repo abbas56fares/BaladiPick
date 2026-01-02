@@ -284,13 +284,5 @@ function verifyPickup(orderId, qrCode) {
         }
     });
 }
-
-// Auto-refresh page every 5 seconds to show real-time updates
-setInterval(function() {
-    // Only reload if no modal is open
-    if (!document.querySelector('.modal.show')) {
-        location.reload();
-    }
-}, 5000);
 </script>
 @endpush

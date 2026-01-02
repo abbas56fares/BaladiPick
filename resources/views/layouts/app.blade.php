@@ -148,31 +148,188 @@
             encrypted: true,
         });
 
+        // Global user interaction detection
+        let isUserActive = false;
+        document.addEventListener('mousedown', () => { isUserActive = true; });
+        document.addEventListener('mouseup', () => { isUserActive = false; });
+        document.addEventListener('keydown', () => { isUserActive = true; });
+        document.addEventListener('keyup', () => { isUserActive = false; });
+
+        function canReload() {
+            // Don't reload if modal is open or user is actively interacting
+            return !document.querySelector('.modal.show') && !isUserActive;
+        }
+
         // Listen for order updates
         const ordersChannel = pusher.subscribe('orders');
         
         ordersChannel.bind('order.accepted', function(data) {
             console.log('Order accepted:', data);
-            // Reload page if not on order details page
-            if (!window.location.href.includes('/orders/' + data.id)) {
-                setTimeout(() => location.reload(), 300);
+            // Smart reload: only reload if safe and on relevant page
+            if (canReload()) {
+                const currentUrl = window.location.href;
+                // For shop: reload if on dashboard, orders, or orders-map for this shop
+                if (currentUrl.includes('/shop/') && !currentUrl.includes('/orders/' + data.id)) {
+                    setTimeout(() => location.reload(), 300);
+                }
+                // For delivery: always reload to show new accepted order
+                else if (currentUrl.includes('/delivery/')) {
+                    setTimeout(() => location.reload(), 300);
+                }
             }
         });
 
         ordersChannel.bind('order.cancelled', function(data) {
             console.log('Order cancelled:', data);
-            // Reload page to show cancellation
-            setTimeout(() => location.reload(), 300);
+            // Smart reload
+            if (canReload()) {
+                const currentUrl = window.location.href;
+                // Reload on shop/delivery pages but not on specific order detail page
+                if (!currentUrl.includes('/orders/' + data.id)) {
+                    setTimeout(() => location.reload(), 300);
+                }
+            }
         });
 
         ordersChannel.bind('order.verified', function(data) {
             console.log('Order verified:', data);
-            // Reload page to show verification status
-            setTimeout(() => location.reload(), 300);
+            // Smart reload
+            if (canReload()) {
+                const currentUrl = window.location.href;
+                // Reload on shop/delivery pages but not on specific order detail page
+                if (!currentUrl.includes('/orders/' + data.id)) {
+                    setTimeout(() => location.reload(), 300);
+                }
+            }
         });
+
+        // Make window functions available globally
+        window.pusher = pusher;
+        window.ordersChannel = ordersChannel;
+        window.canReload = canReload;
     </script>
+
+    <!-- Table Sorting and Filtering Utility -->
+    <script>
+        // Initialize sortable tables on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeAllSortableTables();
+        });
+
+        function initializeAllSortableTables() {
+            // Find all tables with sortable headers
+            const tables = document.querySelectorAll('table');
+            tables.forEach(table => {
+                const headers = table.querySelectorAll('th.sortable, th[data-sortable="true"]');
+                if (headers.length > 0) {
+                    attachTableSorting(table);
+                }
+            });
+        }
+
+        function attachTableSorting(table) {
+            const headers = table.querySelectorAll('th.sortable, th[data-sortable="true"]');
+            const tbody = table.querySelector('tbody');
+            if (!tbody) return;
+
+            headers.forEach((header, index) => {
+                header.style.cursor = 'pointer';
+                header.style.userSelect = 'none';
+                header.addEventListener('click', function() {
+                    sortTableByColumn(table, index);
+                });
+            });
+        }
+
+        function sortTableByColumn(table, columnIndex) {
+            const tbody = table.querySelector('tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            const header = table.querySelectorAll('th')[columnIndex];
+            
+            // Determine sort direction
+            let isAsc = true;
+            if (header.classList.contains('sort-asc')) {
+                isAsc = false;
+                header.classList.remove('sort-asc');
+                header.classList.add('sort-desc');
+            } else {
+                header.classList.remove('sort-desc');
+                header.classList.add('sort-asc');
+            }
+            
+            // Clear other headers
+            table.querySelectorAll('th').forEach(h => {
+                if (h !== header) {
+                    h.classList.remove('sort-asc', 'sort-desc');
+                }
+            });
+            
+            // Sort rows
+            rows.sort((a, b) => {
+                let aVal = a.cells[columnIndex].textContent.trim();
+                let bVal = b.cells[columnIndex].textContent.trim();
+                
+                // Try to parse as number if possible
+                const aNum = parseFloat(aVal.replace(/[$#,%]/g, ''));
+                const bNum = parseFloat(bVal.replace(/[$#,%]/g, ''));
+                
+                if (!isNaN(aNum) && !isNaN(bNum)) {
+                    return isAsc ? aNum - bNum : bNum - aNum;
+                }
+                
+                // String comparison
+                aVal = aVal.toLowerCase();
+                bVal = bVal.toLowerCase();
+                return isAsc ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+            });
+            
+            // Re-render sorted rows
+            rows.forEach(row => tbody.appendChild(row));
+        }
+
+        // Global filter function for tables
+        function filterTableByColumn(inputSelector, tableSelector, columnIndex) {
+            const input = document.querySelector(inputSelector);
+            const table = document.querySelector(tableSelector);
+            if (!input || !table) return;
+
+            input.addEventListener('keyup', function() {
+                const filterValue = this.value.toLowerCase();
+                const rows = table.querySelectorAll('tbody tr');
+                
+                rows.forEach(row => {
+                    const cellText = row.cells[columnIndex].textContent.toLowerCase();
+                    row.style.display = cellText.includes(filterValue) ? '' : 'none';
+                });
+            });
+        }
+    </script>
+
+    <!-- Table Styling -->
+    <style>
+        th.sortable, th[data-sortable="true"] {
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+        }
+        th.sortable:hover, th[data-sortable="true"]:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+        th.sort-asc::after {
+            content: ' ↑';
+            color: #0d6efd;
+            font-weight: bold;
+        }
+        th.sort-desc::after {
+            content: ' ↓';
+            color: #0d6efd;
+            font-weight: bold;
+        }
+    </style>
     
     @stack('scripts')
 
 </body>
 </html>
+
+```

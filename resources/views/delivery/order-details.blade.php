@@ -69,7 +69,7 @@
                                     'cancelled' => 'danger'
                                 ];
                             @endphp
-                            <span class="badge bg-{{ $statusColors[$order->status] ?? 'secondary' }}">
+                            <span class="badge bg-{{ $statusColors[$order->status] ?? 'secondary' }}" data-order-status-badge>
                                 {{ ucfirst(str_replace('_', ' ', $order->status)) }}
                             </span>
                         </p>
@@ -381,11 +381,72 @@ function submitWhatsAppShare() {
     </div>
 </div>
 
-<!-- Auto-refresh every 5 seconds to show order status and delivery updates -->
+<!-- Real-time order status updates via WebSocket -->
 <script>
-    setInterval(function() {
-        if ($('.modal.show').length === 0 && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
-            location.reload();
+document.addEventListener('DOMContentLoaded', function() {
+    const orderId = {{ $order->id }};
+    const currentStatus = '{{ $order->status }}';
+    
+    // Listen for real-time order updates
+    if (window.ordersChannel) {
+        // Listen for order.verified event (when shop confirms pickup via QR code)
+        window.ordersChannel.bind('order.verified', function(data) {
+            if (data.id === orderId) {
+                console.log('Order #' + orderId + ' pickup verified. Updating status...');
+                
+                // Update the status badge
+                updateOrderStatus(data.status || 'in_transit');
+                
+                // Show notification
+                showOrderUpdateNotification('Pickup confirmed! Order is now in transit.');
+                
+                // Reload the page after 2 seconds to get all updated details
+                setTimeout(() => location.reload(), 2000);
+            }
+        });
+        
+        // Listen for order.cancelled event
+        window.ordersChannel.bind('order.cancelled', function(data) {
+            if (data.id === orderId) {
+                console.log('Order #' + orderId + ' cancelled.');
+                updateOrderStatus('cancelled');
+                showOrderUpdateNotification('Order has been cancelled.', 'warning');
+                setTimeout(() => location.reload(), 2000);
+            }
+        });
+    }
+    
+    function updateOrderStatus(newStatus) {
+        // Update status badge
+        const statusBadge = document.querySelector('[data-order-status-badge]');
+        if (statusBadge) {
+            const statusColors = {
+                'pending': 'warning',
+                'in_transit': 'primary',
+                'delivered': 'success',
+                'cancelled': 'danger'
+            };
+            statusBadge.className = 'badge bg-' + (statusColors[newStatus] || 'secondary');
+            statusBadge.textContent = newStatus.replace('_', ' ').toUpperCase();
         }
-    }, 5000); // 5 seconds
+    }
+    
+    function showOrderUpdateNotification(message, type = 'success') {
+        // Create a simple toast notification
+        const alertDiv = document.createElement('div');
+        alertDiv.className = 'alert alert-' + type + ' alert-dismissible fade show position-fixed bottom-0 end-0 m-3';
+        alertDiv.style.zIndex = '9999';
+        alertDiv.style.maxWidth = '400px';
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.body.appendChild(alertDiv);
+        
+        // Auto-dismiss after 5 seconds
+        setTimeout(() => {
+            alertDiv.remove();
+        }, 5000);
+    }
+});
 </script>

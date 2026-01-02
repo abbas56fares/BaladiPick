@@ -3,6 +3,28 @@
 @section('title', 'Delivery Map')
 
 @section('content')
+<!-- Order Details Modal -->
+<div class="modal fade" id="orderDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Order Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="orderDetailsContent">
+                <p class="text-center"><span class="spinner-border spinner-border-sm"></span> Loading...</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <form id="acceptFromModalForm" method="POST" style="display:inline;">
+                    @csrf
+                    <button type="submit" class="btn btn-success">Accept Order</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="row">
     <div class="col-12">
         <h2>Delivery Orders Map</h2>
@@ -11,15 +33,27 @@
 </div>
 
 <div class="row mt-3">
-    <div class="col-12">
+    <div class="col-12 col-lg-6">
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Your Accepted Orders <span id="shop-filter-badge" class="badge bg-info" style="display:none;"></span></h5>
-                <button id="reset-view-btn" class="btn btn-sm btn-secondary" style="display:none;">View Available</button>
+                <h5 class="mb-0">Your Accepted Orders</h5>
             </div>
             <div class="card-body">
-                <div id="orders-list">
+                <div id="accepted-orders-list">
                     <p class="text-center">Loading your accepted orders...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-lg-6">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Available Orders <span id="shop-filter-badge" class="badge bg-info" style="display:none;"></span></h5>
+                <button id="reset-view-btn" class="btn btn-sm btn-secondary" style="display:none;">Clear Filter</button>
+            </div>
+            <div class="card-body">
+                <div id="available-orders-list">
+                    <p class="text-center">Loading available orders...</p>
                 </div>
             </div>
         </div>
@@ -77,6 +111,21 @@
         justify-content: center;
         font-size: 12px;
         color: white;
+    }
+    .sortable {
+        user-select: none;
+        font-weight: 500;
+    }
+    .sortable:hover {
+        background-color: rgba(0, 0, 0, 0.05);
+    }
+    .sortable.sorted-asc::after {
+        content: ' ↑';
+        color: #0d6efd;
+    }
+    .sortable.sorted-desc::after {
+        content: ' ↓';
+        color: #0d6efd;
     }
 </style>
 @endpush
@@ -210,7 +259,8 @@ document.addEventListener('DOMContentLoaded', function () {
     resetBtn.addEventListener('click', function() {
         selectedShop = null;
         if (allData) {
-            renderTable(allData.orders, false); // Show available orders
+            renderAcceptedTable(allData.acceptedOrders || []); // Show accepted orders
+            renderAvailableTable(allData.orders); // Show available orders
             renderMap(allData.shops, allData.orders);
             shopFilterBadge.style.display = 'none';
             resetBtn.style.display = 'none';
@@ -218,54 +268,137 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    function renderTable(orders, isAccepted = false) {
-        const container = document.getElementById('orders-list');
+    function renderAcceptedTable(orders) {
+        const container = document.getElementById('accepted-orders-list');
         if (!orders || orders.length === 0) {
-            const msg = isAccepted 
-                ? '<p class="text-muted text-center">You have not accepted any orders yet. <br><strong>Click on order red icons on the map to accept them.</strong></p>'
-                : '<p class="text-muted text-center">No available orders at the moment.</p>';
-            container.innerHTML = msg;
+            container.innerHTML = '<p class="text-muted text-center">You have not accepted any orders yet. <br><strong>Click on order icons on the map to accept them.</strong></p>';
             return;
         }
-        let html = '<div class="table-responsive"><table class="table table-hover">';
+        let html = '<div class="table-responsive"><table class="table table-hover table-sm sortable-table">';
         html += '<thead><tr>';
-        if (isAccepted) {
-            html += '<th>Order ID</th><th>Shop</th><th>Client</th><th>Vehicle</th><th>Profit</th><th>Status</th><th>Action</th>';
-        } else {
-            html += '<th>Order ID</th><th>Shop</th><th>Client</th><th>Location</th><th>Vehicle</th><th>Profit</th><th>Action</th>';
-        }
+        html += '<th class="sortable" data-column="id">Order ID <i class="bi bi-arrow-down-up"></i></th>';
+        html += '<th class="sortable" data-column="shop">Shop <i class="bi bi-arrow-down-up"></i></th>';
+        html += '<th class="sortable" data-column="client">Client <i class="bi bi-arrow-down-up"></i></th>';
+        html += '<th class="sortable" data-column="vehicle">Vehicle <i class="bi bi-arrow-down-up"></i></th>';
+        html += '<th class="sortable" data-column="profit">Profit <i class="bi bi-arrow-down-up"></i></th>';
+        html += '<th class="sortable" data-column="status">Status <i class="bi bi-arrow-down-up"></i></th>';
+        html += '<th>Action</th>';
         html += '</tr></thead><tbody>';
         orders.forEach(order => {
             html += '<tr>';
             html += `<td>#${order.id}</td>`;
             html += `<td>${order.shop ? order.shop.shop_name : 'N/A'}</td>`;
             html += `<td>${order.client_name}</td>`;
-            if (!isAccepted) {
-                html += `<td>${order.client_lat}, ${order.client_lng}</td>`;
-            }
             html += `<td><span class="badge bg-secondary">${order.vehicle_type}</span></td>`;
             html += `<td>$${parseFloat(order.profit).toFixed(2)}</td>`;
-            if (isAccepted) {
-                const statusBadge = order.status === 'pending' ? 'warning' : (order.status === 'in_transit' ? 'info' : 'success');
-                const statusText = order.status.replace('_', ' ');
-                html += `<td><span class="badge bg-${statusBadge}">${statusText}</span></td>`;
-            }
-            html += `<td>`;
-            if (isAccepted) {
-                html += `<a href="/delivery/orders/${order.id}" class="btn btn-sm btn-primary">View</a>`;
-            } else {
-                html += `
-                    <form action="/delivery/orders/${order.id}/accept" method="POST" style="display:inline;">
-                        <input type="hidden" name="_token" value="{{ csrf_token() }}">
-                        <button type="submit" class="btn btn-sm btn-success">Accept</button>
-                    </form>
-                `;
-            }
-            html += `</td>`;
+            const statusBadge = order.status === 'pending' ? 'warning' : (order.status === 'in_transit' ? 'info' : 'success');
+            const statusText = order.status.replace('_', ' ');
+            html += `<td><span class="badge bg-${statusBadge}">${statusText}</span></td>`;
+            html += `<td><a href="/delivery/orders/${order.id}" class="btn btn-sm btn-primary">View</a></td>`;
             html += '</tr>';
         });
         html += '</tbody></table></div>';
         container.innerHTML = html;
+        attachSortListeners(container);
+    }
+
+    function renderAvailableTable(orders) {
+        const container = document.getElementById('available-orders-list');
+        if (!orders || orders.length === 0) {
+            container.innerHTML = '<p class="text-muted text-center">No available orders at the moment.</p>';
+            return;
+        }
+        let html = '<div class="table-responsive"><table class="table table-hover table-sm sortable-table">';
+        html += '<thead><tr>';
+        html += '<th class="sortable" data-column="id">Order ID <i class="bi bi-arrow-down-up"></i></th>';
+        html += '<th class="sortable" data-column="shop">Shop <i class="bi bi-arrow-down-up"></i></th>';
+        html += '<th class="sortable" data-column="client">Client <i class="bi bi-arrow-down-up"></i></th>';
+        html += '<th class="sortable" data-column="vehicle">Vehicle <i class="bi bi-arrow-down-up"></i></th>';
+        html += '<th class="sortable" data-column="profit">Profit <i class="bi bi-arrow-down-up"></i></th>';
+        html += '<th>Actions</th>';
+        html += '</tr></thead><tbody>';
+        orders.forEach(order => {
+            html += '<tr>';
+            html += `<td>#${order.id}</td>`;
+            html += `<td>${order.shop ? order.shop.shop_name : 'N/A'}</td>`;
+            html += `<td>${order.client_name}</td>`;
+            html += `<td><span class="badge bg-secondary">${order.vehicle_type}</span></td>`;
+            html += `<td>$${parseFloat(order.profit).toFixed(2)}</td>`;
+            html += `<td>
+                <button class="btn btn-sm btn-info me-1" onclick="window.showOrderDetailsModal(${order.id})">
+                    <i class="bi bi-eye"></i> View
+                </button>
+                <form action="/delivery/orders/${order.id}/accept" method="POST" style="display:inline;">
+                    <input type="hidden" name="_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-sm btn-success">Accept</button>
+                </form>
+            </td>`;
+            html += '</tr>';
+        });
+        html += '</tbody></table></div>';
+        container.innerHTML = html;
+        attachSortListeners(container);
+    }
+
+    function renderTable(orders, isAccepted = false) {
+        if (isAccepted) {
+            renderAcceptedTable(orders);
+        } else {
+            renderAvailableTable(orders);
+        }
+    }
+
+    function attachSortListeners(container) {
+        const headers = container.querySelectorAll('.sortable');
+        headers.forEach(header => {
+            header.style.cursor = 'pointer';
+            header.addEventListener('click', function() {
+                const column = this.getAttribute('data-column');
+                const table = container.querySelector('table');
+                const tbody = table.querySelector('tbody');
+                const rows = Array.from(tbody.querySelectorAll('tr'));
+                
+                // Determine sort direction
+                let isAsc = true;
+                if (this.classList.contains('sorted-asc')) {
+                    isAsc = false;
+                    this.classList.remove('sorted-asc');
+                    this.classList.add('sorted-desc');
+                } else {
+                    this.classList.remove('sorted-desc');
+                    this.classList.add('sorted-asc');
+                }
+                
+                // Clear other headers
+                container.querySelectorAll('.sortable').forEach(h => {
+                    if (h !== this) {
+                        h.classList.remove('sorted-asc', 'sorted-desc');
+                    }
+                });
+                
+                // Sort rows
+                rows.sort((a, b) => {
+                    let aVal, bVal;
+                    const colIndex = Array.from(a.cells).findIndex(cell => {
+                        const header = container.querySelector(`[data-column="${column}"]`);
+                        return Array.from(header.parentElement.cells).indexOf(header) === Array.from(a.cells).indexOf(cell);
+                    });
+                    
+                    if (column === 'profit' || column === 'id') {
+                        aVal = parseFloat(a.cells[colIndex].textContent.replace('$', '').replace('#', '')) || 0;
+                        bVal = parseFloat(b.cells[colIndex].textContent.replace('$', '').replace('#', '')) || 0;
+                        return isAsc ? aVal - bVal : bVal - aVal;
+                    } else {
+                        aVal = a.cells[colIndex].textContent.toLowerCase();
+                        bVal = b.cells[colIndex].textContent.toLowerCase();
+                        return isAsc ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+                    }
+                });
+                
+                // Re-render sorted rows
+                rows.forEach(row => tbody.appendChild(row));
+            });
+        });
     }
 
     function renderMap(shops, availableOrders) {
@@ -308,7 +441,12 @@ document.addEventListener('DOMContentLoaded', function () {
                         Shop: ${order.shop.shop_name}<br>
                         Vehicle: ${order.vehicle_type}<br>
                         Profit: $${parseFloat(order.profit).toFixed(2)}<br>
-                        <button class="btn btn-sm btn-success mt-2" onclick="window.acceptOrderFromMap(${order.id})">Accept Order</button>
+                        <div class="mt-2 d-flex gap-2">
+                            <button class="btn btn-sm btn-info flex-grow-1" onclick="window.showOrderDetailsModal(${order.id})">
+                                <i class="bi bi-eye"></i> View Details
+                            </button>
+                            <button class="btn btn-sm btn-success flex-grow-1" onclick="window.acceptOrderFromMap(${order.id})">Accept</button>
+                        </div>
                     `)
                     .on('click', function() {
                         drawRouteTo(order.client_lat, order.client_lng);
@@ -402,8 +540,80 @@ document.addEventListener('DOMContentLoaded', function () {
         
         // Filter orders for this shop
         const shopOrders = allData.orders.filter(o => o.shop_id === shopId);
-        renderTable(shopOrders, false); // Show available orders table
+        renderAvailableTable(shopOrders); // Show filtered available orders
         renderShopOrders(selectedShop, allData.orders);
+    };
+
+    window.showOrderDetailsModal = function(orderId) {
+        const modal = new bootstrap.Modal(document.getElementById('orderDetailsModal'));
+        const contentDiv = document.getElementById('orderDetailsContent');
+        const acceptForm = document.getElementById('acceptFromModalForm');
+        
+        acceptForm.action = `/delivery/orders/${orderId}/accept`;
+        
+        // Fetch from the available orders API endpoint instead
+        fetch(`{{ route("delivery.orders.available") }}`)
+            .then(response => {
+                if (!response.ok) throw new Error('Failed to load orders');
+                return response.json();
+            })
+            .then(data => {
+                // Find the order from the available orders
+                const order = data.orders.find(o => o.id === orderId);
+                if (!order) throw new Error('Order not found');
+                
+                const statusBadgeColor = order.status === 'pending' ? 'warning' : order.status === 'accepted' ? 'info' : 'success';
+                const html = `
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <h6 class="text-muted">Order ID</h6>
+                            <p class="fw-bold">#${order.id}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-muted">Status</h6>
+                            <p><span class="badge bg-${statusBadgeColor}">${order.status}</span></p>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <h6 class="text-muted">Client Name</h6>
+                            <p>${order.client_name}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-muted">Client Phone</h6>
+                            <p><a href="tel:${order.client_phone}">${order.client_phone}</a></p>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <h6 class="text-muted">Shop</h6>
+                            <p>${order.shop ? order.shop.shop_name : 'N/A'}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-muted">Vehicle Type</h6>
+                            <p><span class="badge bg-secondary">${order.vehicle_type}</span></p>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <h6 class="text-muted">Profit</h6>
+                            <p class="fw-bold text-success">$${parseFloat(order.profit).toFixed(2)}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-muted">Delivery Location</h6>
+                            <p>${order.client_address || 'N/A'}</p>
+                        </div>
+                    </div>
+                    ${order.special_instructions ? `<div class="row mb-3"><div class="col-12"><h6 class="text-muted">Special Instructions</h6><p>${order.special_instructions}</p></div></div>` : ''}
+                    <div class="row"><div class="col-12"><h6 class="text-muted">Created At</h6><p>${new Date(order.created_at).toLocaleString()}</p></div></div>
+                `;
+                contentDiv.innerHTML = html;
+            })
+            .catch(error => {
+                contentDiv.innerHTML = `<p class="text-danger">Error loading order details: ${error.message}</p>`;
+            });
+        
+        modal.show();
     };
 
     window.acceptOrderFromMap = function(orderId) {
@@ -433,7 +643,9 @@ document.addEventListener('DOMContentLoaded', function () {
             })
             .then(data => {
                 allData = data;
-                // Don't render table here, let loadAcceptedOrders handle it
+                // Render available orders table
+                renderAvailableTable(data.orders);
+                // Render map with available orders
                 renderMap(data.shops, data.orders);
             })
             .catch(error => {
@@ -458,10 +670,10 @@ document.addEventListener('DOMContentLoaded', function () {
             })
             .then(data => {
                 if (data && data.orders !== undefined) {
-                    renderTable(data.orders, true); // Show accepted orders
+                    renderAcceptedTable(data.orders); // Show accepted orders in separate table
                 } else {
                     console.error('Invalid data structure:', data);
-                    document.getElementById('orders-list').innerHTML = '<p class="text-warning text-center">Invalid response format.</p>';
+                    document.getElementById('accepted-orders-list').innerHTML = '<p class="text-warning text-center">Invalid response format.</p>';
                 }
             })
             .catch(error => {

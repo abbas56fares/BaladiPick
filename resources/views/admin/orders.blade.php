@@ -15,31 +15,14 @@
                         <table class="table table-hover">
                             <thead>
                                 <tr>
-                                    <th>ID</th>
-                                    <th>Shop</th>
-                                    <th>Client</th>
-                                    <th>Delivery</th>
-                                    <th>Vehicle</th>
-                                    <th>Profit</th>
-                                    <th>Status</th>
-                                    <th>Date</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($orders as $order)
-                                    <tr>
-                                        <td>#{{ $order->id }}</td>
-                                        <td>{{ $order->shop->shop_name }}</td>
-                                        <td>{{ $order->client_name }}</td>
-                                        <td>
-                                            @if($order->delivery)
-                                                {{ $order->delivery->name }}
-                                            @else
-                                                <span class="text-muted">Not assigned</span>
-                                            @endif
-                                        </td>
-                                        <td><span class="badge bg-secondary">{{ ucfirst($order->vehicle_type) }}</span></td>
+                                    <th class="sortable">ID</th>
+                                    <th class="sortable">Shop</th>
+                                    <th class="sortable">Client</th>
+                                    <th class="sortable">Delivery</th>
+                                    <th class="sortable">Vehicle</th>
+                                    <th class="sortable">Profit</th>
+                                    <th class="sortable">Status</th>
+                                    <th class="sortable">Date</th>
                                         <td>${{ number_format($order->profit, 2) }}</td>
                                         <td>
                                             @php

@@ -35,14 +35,14 @@
                         <table class="table table-hover">
                             <thead>
                                 <tr>
-                                    <th>ID</th>
-                                    <th>Shop Name</th>
-                                    <th>Owner</th>
-                                    <th>Email</th>
-                                    <th>Phone</th>
+                                    <th class="sortable">ID</th>
+                                    <th class="sortable">Shop Name</th>
+                                    <th class="sortable">Owner</th>
+                                    <th class="sortable">Email</th>
+                                    <th class="sortable">Phone</th>
                                     <th>ID Document</th>
-                                    <th>Address</th>
-                                    <th>Verified</th>
+                                    <th class="sortable">Address</th>
+                                    <th class="sortable">Verified</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>

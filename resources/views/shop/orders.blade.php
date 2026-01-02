@@ -33,14 +33,14 @@
                         <table class="table table-hover" id="ordersTable">
                             <thead>
                                 <tr>
-                                    <th>Order ID</th>
-                                    <th>Client</th>
-                                    <th>Phone</th>
-                                    <th>Vehicle</th>
-                                    <th>Profit</th>
-                                    <th>Status</th>
-                                    <th>Delivery</th>
-                                    <th>Date</th>
+                                    <th class="sortable">Order ID</th>
+                                    <th class="sortable">Client</th>
+                                    <th class="sortable">Phone</th>
+                                    <th class="sortable">Vehicle</th>
+                                    <th class="sortable">Profit</th>
+                                    <th class="sortable">Status</th>
+                                    <th class="sortable">Delivery</th>
+                                    <th class="sortable">Date</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
@@ -263,13 +263,5 @@ function verifyPickupOrders(orderId, qrCode) {
         }
     });
 }
-
-// Auto-refresh page every 7 seconds to show real-time updates (less frequent due to pagination)
-setInterval(function() {
-    // Only reload if no modal is open
-    if (!document.querySelector('.modal.show')) {
-        location.reload();
-    }
-}, 7000);
 </script>
 @endpush
