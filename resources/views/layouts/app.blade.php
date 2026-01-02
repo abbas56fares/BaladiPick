@@ -135,6 +135,44 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Laravel Echo & Pusher -->
+    <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
+    <script>
+        window.Pusher = Pusher;
+        Pusher.logToConsole = false;
+        
+        const pusher = new Pusher('{{ env("PUSHER_APP_KEY") }}', {
+            cluster: '{{ env("PUSHER_CLUSTER", "mt") }}',
+            forceTLS: true,
+            encrypted: true,
+        });
+
+        // Listen for order updates
+        const ordersChannel = pusher.subscribe('orders');
+        
+        ordersChannel.bind('order.accepted', function(data) {
+            console.log('Order accepted:', data);
+            // Reload page if not on order details page
+            if (!window.location.href.includes('/orders/' + data.id)) {
+                setTimeout(() => location.reload(), 300);
+            }
+        });
+
+        ordersChannel.bind('order.cancelled', function(data) {
+            console.log('Order cancelled:', data);
+            // Reload page to show cancellation
+            setTimeout(() => location.reload(), 300);
+        });
+
+        ordersChannel.bind('order.verified', function(data) {
+            console.log('Order verified:', data);
+            // Reload page to show verification status
+            setTimeout(() => location.reload(), 300);
+        });
+    </script>
+    
     @stack('scripts')
+
 </body>
 </html>

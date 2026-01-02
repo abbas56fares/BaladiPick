@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\OrderCancelled;
 use App\Models\Order;
 use App\Models\OrderLog;
 use App\Models\Shop;
@@ -271,15 +272,29 @@ class ShopController extends Controller
     public function cancelOrder($id)
     {
         $shop = Auth::user()->shop;
-        $order = $shop->orders()->findOrFail($id);
-
-        if (in_array($order->status, ['delivered', 'cancelled'])) {
-            return back()->with('error', 'Cannot cancel this order.');
-        }
-
+        
         DB::beginTransaction();
         
         try {
+            // Lock the order row to prevent race conditions
+            $order = $shop->orders()->where('id', $id)->lockForUpdate()->first();
+            
+            if (!$order) {
+                DB::rollBack();
+                return back()->with('error', 'Order not found.');
+            }
+
+            if (in_array($order->status, ['delivered', 'cancelled'])) {
+                DB::rollBack();
+                return back()->with('error', 'Cannot cancel this order.');
+            }
+            
+            // Check if order was just accepted by delivery
+            if ($order->status === 'in_transit') {
+                DB::rollBack();
+                return back()->with('error', 'Cannot cancel - order is already in transit.');
+            }
+
             $order->update(['status' => 'cancelled']);
 
             OrderLog::create([
@@ -290,6 +305,9 @@ class ShopController extends Controller
             ]);
 
             DB::commit();
+
+            // Broadcast event to all connected clients
+            broadcast(new OrderCancelled($order));
 
             return back()->with('success', 'Order cancelled successfully.');
         } catch (\Exception $e) {

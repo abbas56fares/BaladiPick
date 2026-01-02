@@ -127,8 +127,8 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     loadOrders();
-    // Refresh every 30 seconds
-    setInterval(loadOrders, 30000);
+    // Refresh every 5 seconds for real-time updates
+    setInterval(loadOrders, 5000);
 });
 </script>
 @endpush

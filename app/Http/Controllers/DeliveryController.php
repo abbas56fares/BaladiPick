@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\OrderAccepted;
 use App\Models\Order;
 use App\Models\OrderLog;
 use Illuminate\Http\Request;
@@ -134,31 +135,40 @@ class DeliveryController extends Controller
             return back()->with('error', 'You are on cooldown until ' . $user->cooldown_all_until->format('M d, Y H:i') . ' due to recent cancellations.');
         }
 
-        $order = Order::findOrFail($id);
-
-        if ($order->status !== 'available') {
-            return back()->with('error', 'This order is not available.');
-        }
-
-        // Per-order cooldown check based on last cancellation log
-        $baseOrderCooldown = 20; // minutes
-        $penalty = ($user->cancellation_count ?? 0) * 5; // minutes
-        $cooldownMinutes = $baseOrderCooldown + $penalty;
-
-        $lastCancel = $order->logs()
-            ->where('status', 'cancelled')
-            ->where('changed_by', $user->id)
-            ->latest()
-            ->first();
-
-        if ($lastCancel && $lastCancel->created_at->greaterThan(now()->subMinutes($cooldownMinutes))) {
-            $remaining = $lastCancel->created_at->addMinutes($cooldownMinutes)->diffForHumans(null, true);
-            return back()->with('error', 'You recently cancelled this order. Try again in ' . $remaining . '.');
-        }
-
         DB::beginTransaction();
         
         try {
+            // Lock the order row to prevent race conditions
+            $order = Order::where('id', $id)->lockForUpdate()->first();
+            
+            if (!$order) {
+                DB::rollBack();
+                return back()->with('error', 'Order not found.');
+            }
+
+            // Check if order is still available (another delivery may have just taken it)
+            if ($order->status !== 'available') {
+                DB::rollBack();
+                return back()->with('error', 'This order has already been accepted by another delivery driver.');
+            }
+
+            // Per-order cooldown check based on last cancellation log
+            $baseOrderCooldown = 20; // minutes
+            $penalty = ($user->cancellation_count ?? 0) * 5; // minutes
+            $cooldownMinutes = $baseOrderCooldown + $penalty;
+
+            $lastCancel = $order->logs()
+                ->where('status', 'cancelled')
+                ->where('changed_by', $user->id)
+                ->latest()
+                ->first();
+
+            if ($lastCancel && $lastCancel->created_at->greaterThan(now()->subMinutes($cooldownMinutes))) {
+                DB::rollBack();
+                $remaining = $lastCancel->created_at->addMinutes($cooldownMinutes)->diffForHumans(null, true);
+                return back()->with('error', 'You recently cancelled this order. Try again in ' . $remaining . '.');
+            }
+
             // Generate QR code
             $qrData = 'ORDER-' . $order->id . '-' . time();
             
@@ -176,6 +186,9 @@ class DeliveryController extends Controller
             ]);
 
             DB::commit();
+
+            // Broadcast event to all connected clients
+            broadcast(new OrderAccepted($order));
 
             return redirect()->route('delivery.orders.show', $order->id)
                 ->with('success', 'Order accepted successfully.');

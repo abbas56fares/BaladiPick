@@ -148,8 +148,8 @@ document.addEventListener('DOMContentLoaded', function() {
         loadAcceptedOrders();
     }
 
-    // Refresh every 30 seconds
-    setInterval(loadAcceptedOrders, 30000);
+    // Refresh every 5 seconds for real-time updates
+    setInterval(loadAcceptedOrders, 5000);
 });
 
 function loadAcceptedOrders() {

@@ -476,11 +476,11 @@ document.addEventListener('DOMContentLoaded', function () {
         loadAvailableOrders();
     }, 500);
     
-    // Refresh periodically
+    // Refresh every 5 seconds for real-time updates
     setInterval(() => {
         loadAcceptedOrders();
         loadAvailableOrders();
-    }, 30000);
+    }, 5000);
 });
 </script>
 @endpush
