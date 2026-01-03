@@ -1,0 +1,471 @@
+/* ============================================
+   BALADIPICK MOBILE RESPONSIVE STYLES
+   Optimized for mobile devices and tablets
+   ============================================ */
+
+/* Base Mobile Styles */
+@media (max-width: 768px) {
+    /* Typography - Larger, more readable text */
+    body {
+        font-size: 16px !important;
+        line-height: 1.6;
+        -webkit-text-size-adjust: 100%;
+    }
+
+    h1 { font-size: 1.75rem !important; }
+    h2 { font-size: 1.5rem !important; }
+    h3 { font-size: 1.25rem !important; }
+    h4 { font-size: 1.1rem !important; }
+    h5 { font-size: 1rem !important; }
+    h6 { font-size: 0.95rem !important; }
+
+    /* Buttons - Touch-friendly but compact */
+    .btn {
+        min-height: 36px;
+        min-width: 36px;
+        padding: 8px 12px !important;
+        font-size: 13px !important;
+        touch-action: manipulation;
+    }
+
+    .btn-sm {
+        min-height: 32px;
+        min-width: 32px;
+        padding: 6px 10px !important;
+        font-size: 12px !important;
+    }
+
+    .btn-lg {
+        min-height: 42px;
+        padding: 10px 16px !important;
+        font-size: 15px !important;
+    }
+
+    /* Button groups */
+    .btn-group .btn {
+        flex: 1;
+        margin: 2px;
+    }
+
+    /* Full-width buttons on mobile */
+    .btn-block-mobile {
+        width: 100%;
+        display: block;
+        margin-bottom: 10px;
+    }
+
+    /* Cards - Better spacing */
+    .card {
+        margin-bottom: 0.75rem;
+        border-radius: 8px;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    }
+
+    .card-body {
+        padding: 0.75rem !important;
+    }
+
+    .card-header {
+        padding: 0.5rem 0.75rem !important;
+        font-size: 0.95rem;
+        font-weight: 600;
+    }
+
+    /* Tables - Responsive */
+    .table-responsive {
+        margin: -0.75rem;
+        padding: 0.75rem;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .table {
+        font-size: 12px;
+        min-width: 600px;
+    }
+
+    .table th,
+    .table td {
+        padding: 6px 4px !important;
+        white-space: nowrap;
+        vertical-align: middle;
+    }
+
+    .table-sm th,
+    .table-sm td {
+        padding: 4px 3px !important;
+    }
+
+    .table thead th {
+        padding: 6px 4px !important;
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+    /* Stack table on very small screens */
+    @media (max-width: 576px) {
+        .table-stack {
+            min-width: 100% !important;
+        }
+
+        .table-stack thead {
+            display: none;
+        }
+
+        .table-stack tr {
+            display: block;
+            margin-bottom: 1rem;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 0.5rem;
+        }
+
+        .table-stack td {
+            display: block;
+            text-align: right;
+            white-space: normal !important;
+            padding: 8px !important;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .table-stack td:last-child {
+            border-bottom: none;
+        }
+
+        .table-stack td:before {
+            content: attr(data-label);
+            float: left;
+            font-weight: 600;
+            color: #495057;
+        }
+    }
+
+    /* Forms - Touch-friendly inputs */
+    .form-control,
+    .form-select,
+    textarea.form-control {
+        min-height: 44px;
+        font-size: 16px !important;
+        padding: 10px 12px !important;
+        border-radius: 8px;
+    }
+
+    textarea.form-control {
+        min-height: 100px;
+    }
+
+    .form-label {
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 6px;
+    }
+
+    .form-check-input {
+        width: 24px;
+        height: 24px;
+        margin-top: 0;
+    }
+
+    .form-check-label {
+        padding-left: 8px;
+        font-size: 16px;
+    }
+
+    /* Navigation - Mobile optimized */
+    .navbar-brand {
+        font-size: 1.25rem !important;
+    }
+
+    .nav-link {
+        padding: 12px 16px !important;
+        font-size: 16px !important;
+    }
+
+    .navbar-nav {
+        padding: 10px 0;
+    }
+
+    .navbar-collapse {
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+
+    /* Dropdown menus */
+    .dropdown-menu {
+        font-size: 16px;
+        border-radius: 8px;
+    }
+
+    .dropdown-item {
+        padding: 12px 16px;
+    }
+
+    /* Maps - Full width on mobile */
+    #map,
+    #orders-map,
+    #orderLocationMap,
+    #orderDeliveryMap,
+    #accepted-orders-map,
+    [id$='-map'] {
+        height: 400px !important;
+        min-height: 400px !important;
+        border-radius: 12px;
+    }
+
+    /* Map controls - Larger touch targets */
+    .leaflet-control-zoom a {
+        width: 40px !important;
+        height: 40px !important;
+        line-height: 40px !important;
+        font-size: 20px !important;
+    }
+
+    .leaflet-popup-content {
+        font-size: 14px;
+        line-height: 1.5;
+        margin: 10px;
+    }
+
+    .leaflet-popup-content .btn {
+        margin-top: 8px;
+    }
+
+    /* Modals - Full screen on mobile */
+    .modal-dialog {
+        margin: 0;
+        max-width: 100%;
+        height: 100%;
+    }
+
+    .modal-content {
+        height: 100%;
+        border-radius: 0;
+        border: none;
+    }
+
+    .modal-body {
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .modal-lg,
+    .modal-xl {
+        max-width: 100%;
+    }
+
+    /* Badges - Larger and more visible */
+    .badge {
+        font-size: 13px;
+        padding: 6px 10px;
+        border-radius: 6px;
+    }
+
+    /* Alerts - Full width */
+    .alert {
+        border-radius: 8px;
+        padding: 12px 16px;
+        font-size: 15px;
+    }
+
+    /* Container - Remove excess padding */
+    .container,
+    .container-fluid {
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+
+    .row {
+        margin-left: -8px;
+        margin-right: -8px;
+    }
+
+    .col,
+    [class*="col-"] {
+        padding-left: 8px;
+        padding-right: 8px;
+    }
+
+    /* Spacing utilities - Reduced for mobile */
+    .mt-3, .my-3 { margin-top: 1rem !important; }
+    .mb-3, .my-3 { margin-bottom: 1rem !important; }
+    .mt-4, .my-4 { margin-top: 1.5rem !important; }
+    .mb-4, .my-4 { margin-bottom: 1.5rem !important; }
+    .mt-5, .my-5 { margin-top: 2rem !important; }
+    .mb-5, .my-5 { margin-bottom: 2rem !important; }
+
+    /* List groups */
+    .list-group-item {
+        padding: 12px 16px;
+        font-size: 15px;
+    }
+
+    /* Pagination */
+    .pagination {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .page-link {
+        min-width: 40px;
+        min-height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 15px;
+    }
+
+    /* QR Code - Smaller on mobile */
+    svg[width="200"] {
+        max-width: 180px !important;
+        height: auto !important;
+    }
+
+    /* Status badges in cards */
+    .card .badge {
+        margin: 4px 0;
+        display: inline-block;
+    }
+
+    /* Action buttons - Stack vertically */
+    .d-flex.gap-2 {
+        flex-direction: column !important;
+        gap: 8px !important;
+    }
+
+    .d-flex.gap-2 .btn {
+        width: 100%;
+    }
+
+    /* Horizontal scrolling for specific content */
+    .scroll-x {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Hide elements on mobile */
+    .hide-mobile {
+        display: none !important;
+    }
+
+    /* Show only on mobile */
+    .show-mobile {
+        display: block !important;
+    }
+}
+
+/* Tablet Specific (768px - 991px) */
+@media (min-width: 768px) and (max-width: 991px) {
+    .container {
+        max-width: 720px;
+    }
+
+    .btn {
+        font-size: 15px;
+    }
+
+    #map,
+    #orders-map,
+    [id$='-map'] {
+        height: 500px !important;
+    }
+}
+
+/* Small phones (max 375px) */
+@media (max-width: 375px) {
+    body {
+        font-size: 14px !important;
+    }
+
+    h1 { font-size: 1.5rem !important; }
+    h2 { font-size: 1.3rem !important; }
+
+    .btn {
+        padding: 10px 12px !important;
+        font-size: 14px !important;
+    }
+
+    .card-body {
+        padding: 0.75rem !important;
+    }
+
+    #map,
+    #orders-map,
+    [id$='-map'] {
+        height: 350px !important;
+    }
+}
+
+/* Landscape mode adjustments */
+@media (max-width: 768px) and (orientation: landscape) {
+    #map,
+    #orders-map,
+    [id$='-map'] {
+        height: 300px !important;
+    }
+
+    .navbar-collapse {
+        max-height: 60vh;
+    }
+
+    .modal-dialog {
+        height: auto;
+        max-height: 90vh;
+    }
+}
+
+/* Touch-specific improvements */
+@media (hover: none) and (pointer: coarse) {
+    /* Remove hover effects on touch devices */
+    .btn:hover,
+    .nav-link:hover {
+        opacity: 1;
+    }
+
+    /* Add active/pressed states */
+    .btn:active,
+    .nav-link:active {
+        opacity: 0.7;
+        transform: scale(0.98);
+    }
+
+    /* Improve tap targets */
+    a, button, input, select, textarea {
+        -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+    }
+}
+
+/* Print styles - hide unnecessary elements */
+@media print {
+    .navbar,
+    .btn,
+    .alert,
+    .hide-print {
+        display: none !important;
+    }
+
+    #map,
+    [id$='-map'] {
+        height: 400px !important;
+        page-break-inside: avoid;
+    }
+}
+
+/* iOS Safari specific fixes */
+@supports (-webkit-touch-callout: none) {
+    .form-control,
+    .form-select,
+    input,
+    textarea {
+        font-size: 16px !important;
+    }
+
+    /* Fix iOS input zoom */
+    input[type="text"],
+    input[type="email"],
+    input[type="tel"],
+    input[type="number"],
+    textarea,
+    select {
+        font-size: 16px !important;
+    }
+}

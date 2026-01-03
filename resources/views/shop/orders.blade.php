@@ -49,13 +49,13 @@
                             <tbody>
                                 @foreach($orders as $order)
                                     <tr>
-                                        <td>{{ $order->client_name }}</td>
-                                        <td>{{ $order->client_phone }}</td>
-                                        <td>
+                                        <td data-label="Client">{{ $order->client_name }}</td>
+                                        <td data-label="Phone">{{ $order->client_phone }}</td>
+                                        <td data-label="Vehicle">
                                             <span class="badge bg-secondary">{{ ucfirst($order->vehicle_type) }}</span>
                                         </td>
-                                        <td>${{ number_format($order->profit, 2) }}</td>
-                                        <td>
+                                        <td data-label="Profit">${{ number_format($order->profit, 2) }}</td>
+                                        <td data-label="Status">
                                             @php
                                                 $statusColors = [
                                                     'available' => 'info',
@@ -69,18 +69,18 @@
                                                 {{ ucfirst(str_replace('_', ' ', $order->status)) }}
                                             </span>
                                         </td>
-                                        <td>
+                                        <td data-label="Delivery">
                                             @if($order->delivery)
                                                 {{ $order->delivery->name }}
                                             @else
                                                 <span class="text-muted">Not assigned</span>
                                             @endif
                                         </td>
-                                        <td>{{ $order->created_at->format('M d, Y H:i') }}</td>
-                                        <td>
-                                            <a href="{{ route('shop.orders.show', $order->id) }}" class="btn btn-sm btn-info">View</a>
+                                        <td data-label="Date">{{ $order->created_at->format('M d, Y H:i') }}</td>
+                                        <td data-label="Actions">
+                                            <a href="{{ route('shop.orders.show', $order->id) }}" class="btn btn-sm btn-info btn-block-mobile">View</a>
                                             @if(!in_array($order->status, ['delivered', 'cancelled', 'in_transit']))
-                                                <a href="{{ route('shop.orders.edit', $order->id) }}" class="btn btn-sm btn-warning">Edit</a>
+                                                <a href="{{ route('shop.orders.edit', $order->id) }}" class="btn btn-sm btn-warning btn-block-mobile">Edit</a>
                                             @endif
                                             @if(!in_array($order->status, ['delivered', 'cancelled']))
                                                 <form action="{{ route('shop.orders.cancel', $order->id) }}" method="POST" class="d-inline">

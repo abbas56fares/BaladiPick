@@ -13,39 +13,78 @@
 </div>
 
 <div class="row mt-4">
-    <div class="col-md-3">
+    <div class="col-6 col-md-3 mb-3 mb-md-0">
         <div class="card text-white bg-primary">
-            <div class="card-body">
-                <h6 class="card-title">Total Shops</h6>
-                <h2>{{ $totalShops }}</h2>
-                <small>Verified: {{ $verifiedShops }}</small>
+            <div class="card-body p-3">
+                <h6 class="card-title mb-2" style="font-size: 0.85rem;">Total Shops</h6>
+                <h3 class="mb-1" style="font-size: 1.75rem;">{{ $totalShops }}</h3>
+                <small style="font-size: 0.75rem;">Verified: {{ $verifiedShops }}</small>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-6 col-md-3 mb-3 mb-md-0">
         <div class="card text-white bg-info">
-            <div class="card-body">
-                <h6 class="card-title">Delivery Drivers</h6>
-                <h2>{{ $totalDeliveries }}</h2>
-                <small>Verified: {{ $verifiedDeliveries }}</small>
+            <div class="card-body p-3">
+                <h6 class="card-title mb-2" style="font-size: 0.85rem;">Delivery Drivers</h6>
+                <h3 class="mb-1" style="font-size: 1.75rem;">{{ $totalDeliveries }}</h3>
+                <small style="font-size: 0.75rem;">Verified: {{ $verifiedDeliveries }}</small>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-6 col-md-3 mb-3 mb-md-0">
         <div class="card text-white bg-warning">
-            <div class="card-body">
-                <h6 class="card-title">Total Orders</h6>
-                <h2>{{ $totalOrders }}</h2>
-                <small>Pending: {{ $pendingOrders }}</small>
+            <div class="card-body p-3">
+                <h6 class="card-title mb-2" style="font-size: 0.85rem;">Total Orders</h6>
+                <h3 class="mb-1" style="font-size: 1.75rem;">{{ $totalOrders }}</h3>
+                <small style="font-size: 0.75rem;">Pending: {{ $pendingOrders }}</small>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-6 col-md-3">
         <div class="card text-white bg-success">
-            <div class="card-body">
-                <h6 class="card-title">Delivered</h6>
-                <h2>{{ $deliveredOrders }}</h2>
-                <small>Revenue: ${{ number_format($totalRevenue, 2) }}</small>
+            <div class="card-body p-3">
+                <h6 class="card-title mb-2" style="font-size: 0.85rem;">Delivered</h6>
+                <h3 class="mb-1" style="font-size: 1.75rem;">{{ $deliveredOrders }}</h3>
+                <small style="font-size: 0.75rem;">Revenue: ${{ number_format($totalRevenue, 2) }}</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-3">
+    <div class="col-6 col-md-3 mb-3 mb-md-0">
+        <div class="card text-white bg-danger">
+            <div class="card-body p-3">
+                <h6 class="card-title mb-2" style="font-size: 0.85rem;">Cancelled Orders</h6>
+                <h3 class="mb-1" style="font-size: 1.75rem;">{{ $cancelledOrders }}</h3>
+                <small style="font-size: 0.75rem;">Lost revenue</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3 mb-3 mb-md-0">
+        <div class="card text-white bg-secondary">
+            <div class="card-body p-3">
+                <h6 class="card-title mb-2" style="font-size: 0.85rem;">In Transit</h6>
+                <h3 class="mb-1" style="font-size: 1.75rem;">{{ $inTransitOrders }}</h3>
+                <small style="font-size: 0.75rem;">Active deliveries</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3 mb-3 mb-md-0">
+        <div class="card text-white bg-dark">
+            <div class="card-body p-3">
+                <h6 class="card-title mb-2" style="font-size: 0.85rem;">Avg Revenue/Order</h6>
+                <h3 class="mb-1" style="font-size: 1.75rem;">${{ number_format($avgRevenuePerOrder, 2) }}</h3>
+                <small style="font-size: 0.75rem;">Delivered orders</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card text-white bg-primary">
+            <div class="card-body p-3">
+                <h6 class="card-title mb-2" style="font-size: 0.85rem;">Available Orders</h6>
+                <h3 class="mb-1" style="font-size: 1.75rem;">{{ $availableOrders }}</h3>
+                <small style="font-size: 0.75rem;">Waiting assignment</small>
             </div>
         </div>
     </div>

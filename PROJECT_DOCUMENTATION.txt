@@ -1,0 +1,324 @@
+================================================================================
+                          BALADIPICK PROJECT DOCUMENTATION
+                                  Version 2.31.0
+                              Laravel Delivery System
+================================================================================
+
+PROJECT OVERVIEW
+----------------
+BaladiPick is a comprehensive delivery management system built with Laravel 11
+that connects shops, delivery drivers, and administrators in a unified platform.
+
+SYSTEM ARCHITECTURE
+-------------------
+Framework: Laravel 11.x
+Frontend: Blade Templates, Bootstrap 5, Leaflet.js
+Database: MySQL/SQLite
+Real-time: Laravel Echo, Pusher WebSockets
+Maps: Leaflet.js with OpenStreetMap tiles
+
+USER ROLES
+----------
+1. ADMIN
+   - Manage shops and delivery drivers verification
+   - View all orders and system reports
+   - Configure delivery cost settings
+   - Monitor system-wide activities
+
+2. SHOP OWNER
+   - Create delivery orders with client information
+   - Track order status in real-time
+   - View order history and earnings
+   - Generate QR codes for order verification
+   - Manage shop profile and service area
+
+3. DELIVERY DRIVER
+   - View available orders on interactive map
+   - Accept and manage delivery orders
+   - Navigate to pickup and delivery locations
+   - Verify orders using QR/OTP
+   - Track earnings and delivery history
+   - Update profile settings (vehicle type, license, location)
+
+KEY FEATURES
+------------
+
+DELIVERY COST SYSTEM (Auto-calculated)
+- Base Fee: Configurable per vehicle type (bike/car/pickup)
+- Distance Rate: Price per kilometer
+- Fuel Adjustment: Multiplier for fuel costs
+- Formula: Base Fee + (Distance × Rate Per KM × Fuel Adjustment)
+- Driver receives: Full delivery cost
+- Shop receives: Full order price
+
+ORDER MANAGEMENT
+- Create orders with client details and location
+- Auto-calculate delivery cost based on distance and vehicle
+- Real-time status updates (available → pending → in_transit → delivered)
+- QR code verification at pickup
+- OTP verification at delivery
+- Order cancellation with cooldown system
+
+MAP FEATURES
+- Interactive Leaflet maps with OpenStreetMap
+- Real-time delivery driver location
+- Service area circles for shops
+- Route visualization with OSRM routing
+- Custom SVG markers (shops, clients, drivers)
+- Distance calculation using Haversine formula
+
+VERIFICATION SYSTEM
+- Two-step verification: QR scan + OTP
+- QR code generated at order acceptance
+- 6-digit OTP for delivery confirmation
+- Order status automatically updated
+
+NOTIFICATION SYSTEM
+- Real-time notifications via WebSocket (Pusher)
+- Order status change alerts
+- New order notifications for drivers
+- In-app notification center
+
+DATABASE STRUCTURE
+------------------
+
+USERS TABLE
+- id, name, email, phone, password
+- role (admin/shop/delivery)
+- vehicle_type, license_number (for delivery)
+- latitude, longitude (for location tracking)
+- verified (approval status)
+- timezone, cancellation_count, cooldown_all_until
+
+SHOPS TABLE
+- id, user_id, shop_name, address, phone
+- latitude, longitude, range (service area radius)
+- timestamps
+
+ORDERS TABLE
+- id, shop_id, delivery_id
+- client_name, client_phone, client_lat, client_lng
+- shop_lat, shop_lng
+- order_contents, order_price, distance_km
+- vehicle_type, delivery_cost, profit
+- status, qr_code, qr_verified, qr_verified_at
+- delivery_otp, delivery_verified, delivery_verified_at
+- timestamps
+
+SETTINGS TABLE
+- id, key, value, description
+- Stores: base_fee, rate_per_km, fuel_adjustment (per vehicle type)
+
+PAYMENTS TABLE
+- id, order_id, amount, payment_method, status
+- timestamps
+
+NOTIFICATIONS TABLE
+- id, sender_id, receiver_id, order_id
+- message, is_read
+- timestamps
+
+ORDER_LOGS TABLE
+- id, order_id, changed_by, status, note
+- timestamps
+
+IMPORTANT ROUTES
+----------------
+
+ADMIN ROUTES (/admin/*)
+- /dashboard - Admin dashboard
+- /shops - Manage shops
+- /deliveries - Manage delivery drivers
+- /orders - View all orders
+- /settings - Configure delivery costs
+- /reports - System reports
+
+SHOP ROUTES (/shop/*)
+- /dashboard - Shop dashboard
+- /orders - Order list
+- /orders/create - Create new order
+- /orders/{id}/edit - Edit order
+- /orders/map - Map view of orders
+- /profile - Shop profile settings
+
+DELIVERY ROUTES (/delivery/*)
+- /dashboard - Delivery dashboard
+- /map - Available orders map
+- /accepted-orders-map - My accepted orders
+- /orders/my - My orders list
+- /orders/{id} - Order details
+- /orders/{id}/accept - Accept order
+- /orders/{id}/verify-qr - Verify QR at pickup
+- /orders/{id}/verify-otp - Verify OTP at delivery
+- /settings - Driver profile settings
+
+CONFIGURATION FILES
+-------------------
+- config/broadcasting.php - WebSocket configuration
+- config/services.php - Pusher credentials
+- .env - Environment variables
+
+KEY ENVIRONMENT VARIABLES
+--------------------------
+APP_NAME=BaladiPick
+APP_ENV=production
+APP_URL=http://yourdomain.com
+
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_DATABASE=baladipick
+
+PUSHER_APP_ID=your_pusher_app_id
+PUSHER_APP_KEY=your_pusher_key
+PUSHER_APP_SECRET=your_pusher_secret
+PUSHER_APP_CLUSTER=your_cluster
+
+DEPLOYMENT STEPS
+----------------
+1. Clone repository
+2. Run: composer install
+3. Run: npm install && npm run build
+4. Copy .env.example to .env
+5. Configure database and Pusher credentials
+6. Run: php artisan key:generate
+7. Run: php artisan migrate --seed
+8. Run: php artisan storage:link
+9. Configure web server (Apache/Nginx)
+10. Run: php artisan config:cache
+11. Run: php artisan route:cache
+
+DEVELOPMENT COMMANDS
+--------------------
+php artisan serve                    # Start development server
+php artisan migrate                  # Run migrations
+php artisan db:seed                  # Seed database
+php artisan queue:work               # Process queue jobs
+npm run dev                          # Compile assets (development)
+npm run build                        # Compile assets (production)
+
+TESTING
+-------
+php artisan test                     # Run all tests
+php artisan test --filter=OrderTest # Run specific test
+
+CODE STRUCTURE
+--------------
+app/
+  ├── Http/Controllers/           # Request handlers
+  │   ├── AdminController.php
+  │   ├── ShopController.php
+  │   ├── DeliveryController.php
+  │   └── AdminSettingsController.php
+  ├── Models/                     # Database models
+  │   ├── User.php
+  │   ├── Shop.php
+  │   ├── Order.php
+  │   ├── Payment.php
+  │   ├── Notification.php
+  │   ├── OrderLog.php
+  │   └── Setting.php
+  ├── Services/                   # Business logic
+  │   └── DeliveryCostCalculator.php
+  ├── Events/                     # WebSocket events
+  │   ├── OrderAccepted.php
+  │   ├── OrderCancelled.php
+  │   └── OrderVerified.php
+  └── Policies/                   # Authorization
+      ├── OrderPolicy.php
+      └── ShopPolicy.php
+
+resources/
+  ├── views/                      # Blade templates
+  │   ├── admin/
+  │   ├── shop/
+  │   ├── delivery/
+  │   ├── auth/
+  │   └── layouts/
+  ├── js/
+  │   ├── app.js
+  │   └── bootstrap.js
+  └── css/
+      └── app.css
+
+SECURITY FEATURES
+-----------------
+- Role-based access control (admin/shop/delivery)
+- CSRF protection on all forms
+- Password hashing with bcrypt
+- SQL injection protection via Eloquent ORM
+- XSS protection via Blade templating
+- Authorization policies for orders and shops
+- Cooldown system for order cancellations
+
+PERFORMANCE OPTIMIZATIONS
+--------------------------
+- Database indexing on foreign keys
+- Eager loading relationships (with())
+- Pagination for large datasets
+- Route caching for production
+- Asset compilation and minification
+- Query optimization with proper indexes
+
+RECENT UPDATES (v2.31.0)
+------------------------
+✓ Added delivery driver settings page
+  - Edit profile: name, email, phone, vehicle type, license
+  - Update location: latitude, longitude
+  - Navigation link in delivery menu
+
+✓ Vehicle-type delivery pages
+  - Separate admin pages for bike, car, pickup drivers with stats and filtering
+  - Nav dropdown shows unverified badges per vehicle type
+  - Refresh buttons removed from vehicle pages for cleaner headers
+
+✓ Enhanced admin order details view
+  - Display order contents/description
+  - Show complete pricing breakdown
+  - Route information with distance
+
+✓ Improved delivery map popups
+  - Show distance and pricing in markers
+  - Display order contents in modal
+  - Financial breakdown in details
+
+✓ Updated accepted orders map
+  - Complete information in popups
+  - Consistent with main map view
+
+✓ Fixed User model docblock
+  - Added missing @property declarations
+  - Improved IDE intellisense support
+
+TROUBLESHOOTING
+---------------
+Issue: WebSocket not connecting
+Solution: Check Pusher credentials in .env, ensure port 6001 is open
+
+Issue: Maps not loading
+Solution: Check internet connection, Leaflet CDN availability
+
+Issue: Order creation fails
+Solution: Verify shop has latitude/longitude set in profile
+
+Issue: QR verification fails
+Solution: Ensure QR code is generated (order status = pending)
+
+Issue: OTP not generating
+Solution: Check order status is 'in_transit' and QR verified
+
+SUPPORT & MAINTENANCE
+---------------------
+- Regular database backups recommended
+- Monitor log files: storage/logs/laravel.log
+- Keep Laravel and dependencies updated
+- Review and optimize queries periodically
+- Test on staging before production deployment
+
+VERSION HISTORY
+---------------
+v2.31.0 - Delivery settings, enhanced order details, improved map popups
+v2.30.2 - Previous stable version
+
+================================================================================
+                            END OF DOCUMENTATION
+================================================================================

@@ -27,13 +27,13 @@
                             <tbody>
                                 @foreach($orders as $order)
                                     <tr>
-                                        <td>{{ $order->shop->shop_name }}</td>
-                                        <td>{{ $order->client_name }}</td>
-                                        <td>
+                                        <td data-label="Shop">{{ $order->shop->shop_name }}</td>
+                                        <td data-label="Client">{{ $order->client_name }}</td>
+                                        <td data-label="Vehicle">
                                             <span class="badge bg-secondary">{{ ucfirst($order->vehicle_type) }}</span>
                                         </td>
-                                        <td>${{ number_format($order->profit, 2) }}</td>
-                                        <td>
+                                        <td data-label="Profit">${{ number_format($order->profit, 2) }}</td>
+                                        <td data-label="Status">
                                             @php
                                                 $statusColors = [
                                                     'pending' => 'warning',
@@ -46,9 +46,9 @@
                                                 {{ ucfirst(str_replace('_', ' ', $order->status)) }}
                                             </span>
                                         </td>
-                                        <td>{{ $order->created_at->format('M d, Y H:i') }}</td>
-                                        <td>
-                                            <a href="{{ route('delivery.orders.show', $order->id) }}" class="btn btn-sm btn-info">View</a>
+                                        <td data-label="Date">{{ $order->created_at->format('M d, Y H:i') }}</td>
+                                        <td data-label="Actions">
+                                            <a href="{{ route('delivery.orders.show', $order->id) }}" class="btn btn-sm btn-info btn-block-mobile">View</a>
                                         </td>
                                     </tr>
                                 @endforeach

@@ -77,6 +77,11 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::post('/deliveries/{id}/verify', [AdminController::class, 'verifyDelivery'])->name('deliveries.verify');
     Route::post('/deliveries/{id}/disable', [AdminController::class, 'disableDelivery'])->name('deliveries.disable');
     
+    // Vehicle-specific Delivery Management
+    Route::get('/deliveries-bikes', [AdminController::class, 'deliveriesBike'])->name('deliveries.bikes');
+    Route::get('/deliveries-cars', [AdminController::class, 'deliveriesCar'])->name('deliveries.cars');
+    Route::get('/deliveries-pickups', [AdminController::class, 'deliveriesPickup'])->name('deliveries.pickups');
+    
     // Orders Management
     Route::get('/orders', [AdminController::class, 'orders'])->name('orders');
     Route::get('/orders/{id}', [AdminController::class, 'showOrder'])->name('orders.show');

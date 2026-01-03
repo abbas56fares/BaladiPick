@@ -25,9 +25,17 @@ class AdminController extends Controller
         
         $totalOrders = Order::count();
         $deliveredOrders = Order::where('status', 'delivered')->count();
+        $cancelledOrders = Order::where('status', 'cancelled')->count();
+        $inTransitOrders = Order::where('status', 'in_transit')->count();
+        $availableOrders = Order::where('status', 'available')->count();
         $pendingOrders = Order::whereIn('status', ['available', 'pending', 'in_transit'])->count();
         
-        $totalRevenue = Order::where('status', 'delivered')->sum('profit');
+        $totalRevenue = Order::where('status', 'delivered')->sum('delivery_cost');
+        
+        // Calculate average revenue per delivered order
+        $avgRevenuePerOrder = $deliveredOrders > 0 
+            ? $totalRevenue / $deliveredOrders 
+            : 0;
 
         $recentOrders = Order::with(['shop', 'delivery'])
             ->latest()
@@ -41,8 +49,12 @@ class AdminController extends Controller
             'verifiedDeliveries',
             'totalOrders',
             'deliveredOrders',
+            'cancelledOrders',
+            'inTransitOrders',
+            'availableOrders',
             'pendingOrders',
             'totalRevenue',
+            'avgRevenuePerOrder',
             'recentOrders'
         ));
     }
@@ -230,7 +242,8 @@ class AdminController extends Controller
         $totalOrders = Order::count();
         $deliveredOrders = Order::where('status', 'delivered')->count();
         $cancelledOrders = Order::where('status', 'cancelled')->count();
-        $totalRevenue = Order::where('status', 'delivered')->sum('profit');
+        // Revenue should reflect completed deliveries only and use delivery earnings, not total order value
+        $totalRevenue = Order::where('status', 'delivered')->sum('delivery_cost');
 
         $ordersByStatus = Order::select('status', DB::raw('count(*) as count'))
             ->groupBy('status')
@@ -329,7 +342,7 @@ class AdminController extends Controller
         $totalOrders = Order::count();
         $deliveredOrders = Order::where('status', 'delivered')->count();
         $cancelledOrders = Order::where('status', 'cancelled')->count();
-        $totalRevenue = Order::where('status', 'delivered')->sum('profit');
+        $totalRevenue = Order::where('status', 'delivered')->sum('delivery_cost');
 
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.reports-pdf', compact(
             'orders',
@@ -342,5 +355,96 @@ class AdminController extends Controller
         $filename = 'orders_report_' . date('Y-m-d_His') . '.pdf';
         
         return $pdf->download($filename);
+    }
+
+    /**
+     * Show delivery drivers filtered by vehicle type
+     */
+    private function getDeliveriesByVehicle($vehicleType, $search = null, $verified = null)
+    {
+        $query = User::where('role', 'delivery')->where('vehicle_type', $vehicleType);
+
+        if ($search) {
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('phone', 'like', "%{$search}%");
+            });
+        }
+
+        if ($verified !== null) {
+            $query->where('verified', (bool) $verified);
+        }
+
+        return $query->paginate(15);
+    }
+
+    /**
+     * Get vehicle-type specific statistics
+     */
+    private function getVehicleStats($vehicleType)
+    {
+        $totalDrivers = User::where('role', 'delivery')->where('vehicle_type', $vehicleType)->count();
+        $verifiedDrivers = User::where('role', 'delivery')->where('vehicle_type', $vehicleType)->where('verified', true)->count();
+        
+        // Get orders for this vehicle type
+        $totalOrders = Order::where('vehicle_type', $vehicleType)->count();
+        $deliveredOrders = Order::where('vehicle_type', $vehicleType)->where('status', 'delivered')->count();
+
+        return compact('totalDrivers', 'verifiedDrivers', 'totalOrders', 'deliveredOrders');
+    }
+
+    /**
+     * Show bike delivery drivers
+     */
+    public function deliveriesBike(Request $request)
+    {
+        $deliveries = $this->getDeliveriesByVehicle('bike', $request->search, $request->verified);
+        
+        $stats = $this->getVehicleStats('bike');
+        
+        return view('admin.delivery-bikes', [
+            'deliveries' => $deliveries,
+            'totalBikeDrivers' => $stats['totalDrivers'],
+            'verifiedBikeDrivers' => $stats['verifiedDrivers'],
+            'totalBikeOrders' => $stats['totalOrders'],
+            'deliveredBikeOrders' => $stats['deliveredOrders'],
+        ]);
+    }
+
+    /**
+     * Show car delivery drivers
+     */
+    public function deliveriesCar(Request $request)
+    {
+        $deliveries = $this->getDeliveriesByVehicle('car', $request->search, $request->verified);
+        
+        $stats = $this->getVehicleStats('car');
+        
+        return view('admin.delivery-cars', [
+            'deliveries' => $deliveries,
+            'totalCarDrivers' => $stats['totalDrivers'],
+            'verifiedCarDrivers' => $stats['verifiedDrivers'],
+            'totalCarOrders' => $stats['totalOrders'],
+            'deliveredCarOrders' => $stats['deliveredOrders'],
+        ]);
+    }
+
+    /**
+     * Show pickup delivery drivers
+     */
+    public function deliveriesPickup(Request $request)
+    {
+        $deliveries = $this->getDeliveriesByVehicle('pickup', $request->search, $request->verified);
+        
+        $stats = $this->getVehicleStats('pickup');
+        
+        return view('admin.delivery-pickups', [
+            'deliveries' => $deliveries,
+            'totalPickupDrivers' => $stats['totalDrivers'],
+            'verifiedPickupDrivers' => $stats['verifiedDrivers'],
+            'totalPickupOrders' => $stats['totalOrders'],
+            'deliveredPickupOrders' => $stats['deliveredOrders'],
+        ]);
     }
 }

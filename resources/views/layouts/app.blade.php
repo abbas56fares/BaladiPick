@@ -2,10 +2,14 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>@yield('title') - BaladiPick</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{{ asset('css/mobile.css') }}">
     @stack('styles')
 </head>
 <body>
@@ -58,6 +62,18 @@
                                 $unverifiedDeliveriesCount = \App\Models\User::where('role', 'delivery')
                                     ->where('verified', false)
                                     ->count();
+                                $unverifiedBikeDeliveriesCount = \App\Models\User::where('role', 'delivery')
+                                    ->where('vehicle_type', 'bike')
+                                    ->where('verified', false)
+                                    ->count();
+                                $unverifiedCarDeliveriesCount = \App\Models\User::where('role', 'delivery')
+                                    ->where('vehicle_type', 'car')
+                                    ->where('verified', false)
+                                    ->count();
+                                $unverifiedPickupDeliveriesCount = \App\Models\User::where('role', 'delivery')
+                                    ->where('vehicle_type', 'pickup')
+                                    ->where('verified', false)
+                                    ->count();
                             @endphp
                             <li class="nav-item">
                                 <a class="nav-link" href="{{ route('admin.dashboard') }}">Dashboard</a>
@@ -72,8 +88,8 @@
                                     @endif
                                 </a>
                             </li>
-                            <li class="nav-item">
-                                <a class="nav-link position-relative" href="{{ route('admin.deliveries') }}">
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle position-relative" href="#" id="deliveriesDropdown" role="button" data-bs-toggle="dropdown">
                                     Deliveries
                                     @if($unverifiedDeliveriesCount > 0)
                                         <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
@@ -81,6 +97,41 @@
                                         </span>
                                     @endif
                                 </a>
+                                <ul class="dropdown-menu" aria-labelledby="deliveriesDropdown">
+                                    <li>
+                                        <a class="dropdown-item d-flex justify-content-between align-items-center" href="{{ route('admin.deliveries') }}">
+                                            <span><i class="bi bi-people-fill"></i> All Drivers</span>
+                                            @if($unverifiedDeliveriesCount > 0)
+                                                <span class="badge bg-danger ms-2">{{ $unverifiedDeliveriesCount }}</span>
+                                            @endif
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item d-flex justify-content-between align-items-center" href="{{ route('admin.deliveries.bikes') }}">
+                                            <span><i class="bi bi-bicycle"></i> Bike Drivers</span>
+                                            @if($unverifiedBikeDeliveriesCount > 0)
+                                                <span class="badge bg-danger ms-2">{{ $unverifiedBikeDeliveriesCount }}</span>
+                                            @endif
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item d-flex justify-content-between align-items-center" href="{{ route('admin.deliveries.cars') }}">
+                                            <span><i class="bi bi-car-front"></i> Car Drivers</span>
+                                            @if($unverifiedCarDeliveriesCount > 0)
+                                                <span class="badge bg-danger ms-2">{{ $unverifiedCarDeliveriesCount }}</span>
+                                            @endif
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item d-flex justify-content-between align-items-center" href="{{ route('admin.deliveries.pickups') }}">
+                                            <span><i class="bi bi-truck"></i> Pickup Drivers</span>
+                                            @if($unverifiedPickupDeliveriesCount > 0)
+                                                <span class="badge bg-danger ms-2">{{ $unverifiedPickupDeliveriesCount }}</span>
+                                            @endif
+                                        </a>
+                                    </li>
+                                </ul>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link" href="{{ route('admin.orders') }}">Orders</a>
