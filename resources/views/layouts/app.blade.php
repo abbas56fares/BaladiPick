@@ -47,6 +47,9 @@
                             <li class="nav-item">
                                 <a class="nav-link" href="{{ route('delivery.orders.my') }}">Orders List</a>
                             </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ route('delivery.settings') }}">Settings</a>
+                            </li>
                         @elseif(auth()->user()->isAdmin())
                             @php
                                 $unverifiedShopsCount = \App\Models\User::where('role', 'shop')
@@ -81,6 +84,11 @@
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link" href="{{ route('admin.orders') }}">Orders</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ route('admin.settings') }}">
+                                    <i class="bi bi-gear"></i> Settings
+                                </a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link" href="{{ route('admin.reports') }}">Reports</a>

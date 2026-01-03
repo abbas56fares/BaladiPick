@@ -18,6 +18,12 @@ use Illuminate\Notifications\Notifiable;
  * @property int|null $cancellation_count
  * @property \Illuminate\Support\Carbon|null $cooldown_all_until
  * @property string|null $id_document_path
+ * @property string|null $vehicle_type
+ * @property string|null $license_number
+ * @property float|null $latitude
+ * @property float|null $longitude
+ * @property string|null $address
+ * @property string|null $shop_name
  * @property \Illuminate\Support\Carbon|null $email_verified_at
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
@@ -39,6 +45,7 @@ class User extends Authenticatable
         'phone',
         'timezone',
         'role',
+        'vehicle_type',
         'verified',
         'cancellation_count',
         'cooldown_all_until',

@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('password');
             $table->string('phone')->nullable();
             $table->enum('role', ['admin', 'shop', 'delivery'])->default('shop');
+            $table->enum('vehicle_type', ['bike', 'car', 'pickup'])->nullable()->comment('For delivery users only');
             $table->boolean('verified')->default(false);
             $table->unsignedInteger('cancellation_count')->default(0);
             $table->timestamp('cooldown_all_until')->nullable();

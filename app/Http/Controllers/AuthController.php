@@ -71,6 +71,7 @@ class AuthController extends Controller
             'phone' => 'required|string|max:20',
             'timezone' => 'required|string|timezone',
             'role' => 'required|in:shop,delivery',
+            'vehicle_type' => 'required_if:role,delivery|nullable|in:bike,car,pickup',
             'id_document' => 'required|image|mimes:jpeg,png,jpg,gif|max:5120',
         ]);
 
@@ -87,6 +88,7 @@ class AuthController extends Controller
             'phone' => $validated['phone'],
                         'timezone' => $validated['timezone'],
             'role' => $validated['role'],
+            'vehicle_type' => $validated['vehicle_type'] ?? null,
             'verified' => false,
             'id_document_path' => $filePath,
         ]);

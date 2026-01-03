@@ -21,8 +21,12 @@ return new class extends Migration
             $table->decimal('client_lng', 11, 8);
             $table->decimal('shop_lat', 10, 8);
             $table->decimal('shop_lng', 11, 8);
-            $table->enum('vehicle_type', ['bike', 'car']);
-            $table->decimal('profit', 10, 2);
+            $table->text('order_contents')->nullable()->comment('Description of what is being delivered');
+            $table->decimal('order_price', 10, 2)->default(0)->comment('Value of items being delivered');
+            $table->decimal('distance_km', 8, 2)->nullable()->comment('Distance in kilometers');
+            $table->enum('vehicle_type', ['bike', 'car', 'pickup'])->comment('Required vehicle type for this order');
+            $table->decimal('delivery_cost', 10, 2)->default(0)->comment('Auto-calculated delivery fee');
+            $table->decimal('profit', 10, 2)->comment('Shop profit/commission');
             $table->enum('status', ['available', 'pending', 'in_transit', 'delivered', 'cancelled'])->default('available');
             $table->string('qr_code')->nullable();
             $table->boolean('qr_verified')->default(false);

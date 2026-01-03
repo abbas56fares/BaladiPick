@@ -436,7 +436,8 @@ document.addEventListener('DOMContentLoaded', function () {
                         Phone: ${order.client_phone}<br>
                         Shop: ${order.shop.shop_name}<br>
                         Vehicle: ${order.vehicle_type}<br>
-                        Profit: $${parseFloat(order.profit).toFixed(2)}<br>
+                        Distance: ${order.distance_km ? order.distance_km + ' km' : 'N/A'}<br>
+                        Your Profit: $${parseFloat(order.profit).toFixed(2)}<br>
                         <div class="mt-2 d-flex gap-2">
                             <button class="btn btn-sm btn-info flex-grow-1" onclick="window.showOrderDetailsModal(${order.id})">
                                 <i class="bi bi-eye"></i> View Details
@@ -590,12 +591,29 @@ document.addEventListener('DOMContentLoaded', function () {
                             <p><span class="badge bg-secondary">${order.vehicle_type}</span></p>
                         </div>
                     </div>
+                    ${order.order_contents ? `<div class="row mb-3"><div class="col-12"><h6 class="text-muted">Order Contents</h6><p style="white-space: pre-wrap; max-height: 100px; overflow-y: auto; background-color: #f8f9fa; padding: 8px; border-radius: 4px;">${order.order_contents}</p></div></div>` : ''}
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <h6 class="text-muted">Profit</h6>
-                            <p class="fw-bold text-success">$${parseFloat(order.profit).toFixed(2)}</p>
+                            <h6 class="text-muted">Order Price</h6>
+                            <p>$${order.order_price ? parseFloat(order.order_price).toFixed(2) : '0.00'}</p>
                         </div>
                         <div class="col-md-6">
+                            <h6 class="text-muted">Distance</h6>
+                            <p>${order.distance_km ? parseFloat(order.distance_km).toFixed(2) + ' km' : 'N/A'}</p>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <h6 class="text-muted">Delivery Fee</h6>
+                            <p>$${order.delivery_cost ? parseFloat(order.delivery_cost).toFixed(2) : '0.00'}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-muted">Your Profit</h6>
+                            <p class="fw-bold text-success">$${parseFloat(order.profit).toFixed(2)}</p>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-12">
                             <h6 class="text-muted">Delivery Location</h6>
                             <p>${order.client_address || 'N/A'}</p>
                         </div>

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Events\OrderAccepted;
 use App\Models\Order;
 use App\Models\OrderLog;
+use App\Services\DeliveryCostCalculator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -59,12 +60,40 @@ class DeliveryController extends Controller
      */
     public function availableOrders(Request $request)
     {
+        $deliveryUser = Auth::user();
+        
+        // Get delivery driver's vehicle type
+        $vehicleType = $deliveryUser->vehicle_type;
+        
+        if (!$vehicleType) {
+            return response()->json([
+                'shops' => [],
+                'orders' => [],
+                'message' => 'Please update your profile with your vehicle type.'
+            ]);
+        }
+
+        // Filter orders by matching vehicle type
         $orders = Order::where('status', 'available')
+            ->where('vehicle_type', $vehicleType)
             ->with('shop')
             ->get();
 
+        // Further filter by distance range
+        $calculator = new DeliveryCostCalculator();
+        $maxDistance = $calculator->getMaxDistance($vehicleType);
+        
+        $filteredOrders = $orders->filter(function ($order) use ($maxDistance) {
+            // If distance_km is already calculated, use it
+            if ($order->distance_km) {
+                return $order->distance_km <= $maxDistance;
+            }
+            // Otherwise return true (shouldn't happen with new system)
+            return true;
+        });
+
         // Group orders by shop to show shop locations on map
-        $shopsWithOrders = $orders->groupBy('shop_id')->map(function ($shopOrders) {
+        $shopsWithOrders = $filteredOrders->groupBy('shop_id')->map(function ($shopOrders) {
             $shop = $shopOrders->first()->shop;
             return [
                 'shop_id' => $shop->id,
@@ -81,6 +110,8 @@ class DeliveryController extends Controller
                         'client_lat' => $order->client_lat,
                         'client_lng' => $order->client_lng,
                         'vehicle_type' => $order->vehicle_type,
+                        'distance_km' => $order->distance_km,
+                        'delivery_cost' => $order->delivery_cost,
                         'profit' => $order->profit,
                         'shop_id' => $order->shop_id,
                     ];
@@ -90,7 +121,9 @@ class DeliveryController extends Controller
 
         return response()->json([
             'shops' => $shopsWithOrders,
-            'orders' => $orders // Keep original orders for table
+            'orders' => $filteredOrders, // Keep filtered orders for table
+            'vehicle_type' => $vehicleType,
+            'max_distance' => $maxDistance
         ]);
     }
 
@@ -355,6 +388,49 @@ class DeliveryController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->with('error', 'Failed to verify OTP.');
+        }
+    }
+
+    /**
+     * Show delivery settings page
+     */
+    public function settings()
+    {
+        $user = Auth::user();
+        return view('delivery.settings', compact('user'));
+    }
+
+    /**
+     * Update delivery settings
+     */
+    public function updateSettings(Request $request)
+    {
+        $user = Auth::user();
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|max:255|unique:users,email,' . $user->id,
+            'phone' => 'required|string|max:20',
+            'vehicle_type' => 'required|in:bike,car,pickup',
+            'license_number' => 'nullable|string|max:255',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
+        ]);
+
+        try {
+            $user->update([
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'phone' => $validated['phone'],
+                'vehicle_type' => $validated['vehicle_type'],
+                'license_number' => $validated['license_number'] ?? null,
+                'latitude' => $validated['latitude'] ?? null,
+                'longitude' => $validated['longitude'] ?? null,
+            ]);
+
+            return back()->with('success', 'Settings updated successfully!');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Failed to update settings: ' . $e->getMessage());
         }
     }
 }

@@ -4,6 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ShopController;
 use App\Http\Controllers\DeliveryController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\AdminSettingsController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -52,11 +53,17 @@ Route::middleware(['auth', 'role:delivery'])->prefix('delivery')->name('delivery
     Route::post('/orders/{id}/verify-qr', [DeliveryController::class, 'verifyQR'])->name('orders.verify-qr');
     Route::post('/orders/{id}/generate-otp', [DeliveryController::class, 'generateOTP'])->name('orders.generate-otp');
     Route::post('/orders/{id}/verify-otp', [DeliveryController::class, 'verifyOTP'])->name('orders.verify-otp');
+    Route::get('/settings', [DeliveryController::class, 'settings'])->name('settings');
+    Route::post('/settings/update', [DeliveryController::class, 'updateSettings'])->name('settings.update');
 });
 
 // Admin Routes
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
+    
+    // Settings Management
+    Route::get('/settings', [AdminSettingsController::class, 'index'])->name('settings');
+    Route::put('/settings', [AdminSettingsController::class, 'update'])->name('settings.update');
     
     // Shop Management
     Route::get('/shops', [AdminController::class, 'shops'])->name('shops');

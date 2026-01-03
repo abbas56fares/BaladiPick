@@ -103,6 +103,20 @@
                         @enderror
                     </div>
 
+                    <div class="mb-3" id="vehicleTypeField" style="display: none;">
+                        <label for="vehicle_type" class="form-label">Vehicle Type <span class="text-danger">*</span></label>
+                        <select class="form-select @error('vehicle_type') is-invalid @enderror" 
+                                id="vehicle_type" name="vehicle_type">
+                            <option value="">Select vehicle type...</option>
+                            <option value="bike" {{ old('vehicle_type') == 'bike' ? 'selected' : '' }}>Bike/Motorcycle (up to 10km range)</option>
+                            <option value="car" {{ old('vehicle_type') == 'car' ? 'selected' : '' }}>Car (up to 90km range)</option>
+                            <option value="pickup" {{ old('vehicle_type') == 'pickup' ? 'selected' : '' }}>Pickup Truck (up to 90km range)</option>
+                        </select>
+                        @error('vehicle_type')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
                     <div class="mb-3">
                         <label for="id_document" class="form-label">ID/Passport Document</label>
                         <input type="file" class="form-control @error('id_document') is-invalid @enderror" 
@@ -135,4 +149,29 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const roleSelect = document.getElementById('role');
+    const vehicleTypeField = document.getElementById('vehicleTypeField');
+    const vehicleTypeSelect = document.getElementById('vehicle_type');
+
+    function updateVehicleTypeField() {
+        if (roleSelect.value === 'delivery') {
+            vehicleTypeField.style.display = 'block';
+            vehicleTypeSelect.required = true;
+        } else {
+            vehicleTypeField.style.display = 'none';
+            vehicleTypeSelect.required = false;
+            vehicleTypeSelect.value = '';
+        }
+    }
+
+    // Initialize on page load
+    updateVehicleTypeField();
+
+    // Update when role changes
+    roleSelect.addEventListener('change', updateVehicleTypeField);
+});
+</script>
 @endsection

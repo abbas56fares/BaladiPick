@@ -6,6 +6,7 @@ use App\Events\OrderCancelled;
 use App\Models\Order;
 use App\Models\OrderLog;
 use App\Models\Shop;
+use App\Services\DeliveryCostCalculator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -130,9 +131,30 @@ class ShopController extends Controller
             'client_phone' => 'required|string|max:20',
             'client_lat' => 'required|numeric|between:-90,90',
             'client_lng' => 'required|numeric|between:-180,180',
-            'vehicle_type' => 'required|in:bike,car',
-            'profit' => 'required|numeric|min:0',
+            'order_contents' => 'required|string',
+            'order_price' => 'required|numeric|min:0',
+            'vehicle_type' => 'required|in:bike,car,pickup',
         ]);
+
+        // Calculate distance and delivery cost
+        $calculator = new DeliveryCostCalculator();
+        $distance = $calculator->calculateDistance(
+            $shop->latitude,
+            $shop->longitude,
+            $validated['client_lat'],
+            $validated['client_lng']
+        );
+
+        // Check if distance is within range for selected vehicle type
+        if (!$calculator->isWithinRange($validated['vehicle_type'], $distance)) {
+            $maxDistance = $calculator->getMaxDistance($validated['vehicle_type']);
+            return back()->withInput()->with('error', "Distance ({$distance} km) exceeds maximum range for {$validated['vehicle_type']} ({$maxDistance} km).");
+        }
+
+        $deliveryCost = $calculator->calculate($validated['vehicle_type'], $distance);
+        
+        // Shop profit equals the order value
+        $shopProfit = $validated['order_price'];
 
         DB::beginTransaction();
         
@@ -145,8 +167,12 @@ class ShopController extends Controller
                 'client_lng' => $validated['client_lng'],
                 'shop_lat' => $shop->latitude,
                 'shop_lng' => $shop->longitude,
+                'order_contents' => $validated['order_contents'],
+                'order_price' => $validated['order_price'],
                 'vehicle_type' => $validated['vehicle_type'],
-                'profit' => $validated['profit'],
+                'distance_km' => $distance,
+                'delivery_cost' => $deliveryCost,
+                'profit' => $shopProfit,
                 'status' => 'available',
             ]);
 
@@ -160,7 +186,7 @@ class ShopController extends Controller
 
             DB::commit();
 
-            return redirect()->route('shop.orders')->with('success', 'Order created successfully.');
+            return redirect()->route('shop.orders')->with('success', "Order created successfully. Distance: {$distance} km, Delivery cost: \${$deliveryCost}. Your earnings: \${$shopProfit}");
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->with('error', 'Failed to create order: ' . $e->getMessage());
@@ -231,9 +257,30 @@ class ShopController extends Controller
             'client_phone' => 'required|string|max:20',
             'client_lat' => 'required|numeric|between:-90,90',
             'client_lng' => 'required|numeric|between:-180,180',
-            'vehicle_type' => 'required|in:bike,car',
-            'profit' => 'required|numeric|min:0',
+            'order_contents' => 'required|string',
+            'order_price' => 'required|numeric|min:0',
+            'vehicle_type' => 'required|in:bike,car,pickup',
         ]);
+
+        // Recalculate distance and delivery cost
+        $calculator = new DeliveryCostCalculator();
+        $distance = $calculator->calculateDistance(
+            $shop->latitude,
+            $shop->longitude,
+            $validated['client_lat'],
+            $validated['client_lng']
+        );
+
+        // Check if distance is within range for selected vehicle type
+        if (!$calculator->isWithinRange($validated['vehicle_type'], $distance)) {
+            $maxDistance = $calculator->getMaxDistance($validated['vehicle_type']);
+            return back()->withInput()->with('error', "Distance ({$distance} km) exceeds maximum range for {$validated['vehicle_type']} ({$maxDistance} km).");
+        }
+
+        $deliveryCost = $calculator->calculate($validated['vehicle_type'], $distance);
+        
+        // Shop profit equals the order value
+        $shopProfit = $validated['order_price'];
 
         DB::beginTransaction();
 
@@ -245,8 +292,12 @@ class ShopController extends Controller
                 'client_lng' => $validated['client_lng'],
                 'shop_lat' => $shop->latitude,
                 'shop_lng' => $shop->longitude,
+                'order_contents' => $validated['order_contents'],
+                'order_price' => $validated['order_price'],
                 'vehicle_type' => $validated['vehicle_type'],
-                'profit' => $validated['profit'],
+                'distance_km' => $distance,
+                'delivery_cost' => $deliveryCost,
+                'profit' => $shopProfit,
             ]);
 
             OrderLog::create([
@@ -259,7 +310,7 @@ class ShopController extends Controller
             DB::commit();
 
             return redirect()->route('shop.orders.show', $order->id)
-                ->with('success', 'Order updated successfully.');
+                ->with('success', "Order updated successfully. Distance: {$distance} km, Delivery cost: \${$deliveryCost}. Your earnings: \${$shopProfit}");
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->with('error', 'Failed to update order: ' . $e->getMessage());

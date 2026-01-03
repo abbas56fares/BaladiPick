@@ -34,7 +34,19 @@
                             </span>
                         </p>
                         <p><strong>Vehicle Type:</strong> {{ ucfirst($order->vehicle_type) }}</p>
-                        <p><strong>Profit:</strong> ${{ number_format($order->profit, 2) }}</p>
+                        @if($order->order_contents)
+                            <p><strong>Contents:</strong> {{ $order->order_contents }}</p>
+                        @endif
+                        @if($order->order_price)
+                            <p><strong>Order Value:</strong> ${{ number_format($order->order_price, 2) }}</p>
+                        @endif
+                        @if($order->distance_km)
+                            <p><strong>Distance:</strong> {{ number_format($order->distance_km, 2) }} km</p>
+                        @endif
+                        @if($order->delivery_cost)
+                            <p><strong>Delivery Cost:</strong> ${{ number_format($order->delivery_cost, 2) }}</p>
+                        @endif
+                        <p><strong>Shop Profit:</strong> ${{ number_format($order->profit, 2) }}</p>
                         <p><strong>Created:</strong> {{ $order->created_at->format('M d, Y H:i') }}</p>
                     </div>
                 </div>

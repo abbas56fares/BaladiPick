@@ -50,6 +50,34 @@
 
                 <div class="row mb-3">
                     <div class="col-12">
+                        <h5>Order Contents & Description</h5>
+                        @if($order->order_contents)
+                            <p><strong>Items:</strong></p>
+                            <p style="white-space: pre-wrap; background-color: #f8f9fa; padding: 10px; border-radius: 4px;">
+                                {{ $order->order_contents }}
+                            </p>
+                        @else
+                            <p class="text-muted">No order contents provided.</p>
+                        @endif
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <h5>Pricing Information</h5>
+                        <p><strong>Order Price:</strong> ${{ number_format($order->order_price, 2) }}</p>
+                        <p><strong>Delivery Cost:</strong> ${{ number_format($order->delivery_cost, 2) }}</p>
+                        <p><strong>Shop Profit:</strong> ${{ number_format($order->profit, 2) }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h5>Route Information</h5>
+                        <p><strong>Distance:</strong> {{ $order->distance_km }} km</p>
+                        <p><strong>Vehicle Type:</strong> <span class="badge bg-secondary">{{ ucfirst($order->vehicle_type) }}</span></p>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-12">
                         <h5>Order Information</h5>
                         <p><strong>Status:</strong> 
                             @php
@@ -65,8 +93,6 @@
                                 {{ ucfirst(str_replace('_', ' ', $order->status)) }}
                             </span>
                         </p>
-                        <p><strong>Vehicle:</strong> {{ ucfirst($order->vehicle_type) }}</p>
-                        <p><strong>Profit:</strong> ${{ number_format($order->profit, 2) }}</p>
                         <p><strong>Created:</strong> {{ $order->created_at->format('M d, Y H:i') }}</p>
                     </div>
                 </div>

@@ -53,6 +53,11 @@
 
                     <div class="mb-3">
                         <p class="text-muted mb-2">Click on the map to set the client location. Coordinates will fill automatically.</p>
+                        <div class="mb-2">
+                            <button type="button" class="btn btn-sm btn-outline-primary" id="toggleRangeBtn">
+                                <i class="bi bi-eye"></i> Toggle Service Area
+                            </button>
+                        </div>
                         <div id="client-map" class="mb-3"></div>
                     </div>
 
@@ -84,26 +89,47 @@
                     <h5 class="mb-3 mt-4">Order Details</h5>
 
                     <div class="mb-3">
-                        <label for="vehicle_type" class="form-label">Vehicle Type</label>
-                        <select class="form-select @error('vehicle_type') is-invalid @enderror" 
-                                id="vehicle_type" name="vehicle_type" required>
-                            <option value="">Select vehicle...</option>
-                            <option value="bike" {{ old('vehicle_type') == 'bike' ? 'selected' : '' }}>Bike</option>
-                            <option value="car" {{ old('vehicle_type') == 'car' ? 'selected' : '' }}>Car</option>
-                        </select>
-                        @error('vehicle_type')
+                        <label for="order_contents" class="form-label">Order Contents</label>
+                        <textarea class="form-control @error('order_contents') is-invalid @enderror" 
+                                  id="order_contents" name="order_contents" rows="3" 
+                                  placeholder="Describe what is being delivered (e.g., Electronics, Food items, Documents, etc.)" 
+                                  required>{{ old('order_contents') }}</textarea>
+                        <small class="form-text text-muted">Provide a clear description of items to be delivered.</small>
+                        @error('order_contents')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
 
                     <div class="mb-3">
-                        <label for="profit" class="form-label">Delivery Profit ($)</label>
-                        <input type="number" step="0.01" min="0" class="form-control @error('profit') is-invalid @enderror" 
-                               id="profit" name="profit" 
-                               value="{{ old('profit') }}" required>
-                        @error('profit')
+                        <label for="order_price" class="form-label">Order Value ($)</label>
+                        <input type="number" step="0.01" min="0" class="form-control @error('order_price') is-invalid @enderror" 
+                               id="order_price" name="order_price" 
+                               value="{{ old('order_price') }}" 
+                               placeholder="Total value of items being delivered" required>
+                        <small class="form-text text-muted">The actual value/price of items (for insurance/reference).</small>
+                        @error('order_price')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="vehicle_type" class="form-label">Required Vehicle Type</label>
+                        <select class="form-select @error('vehicle_type') is-invalid @enderror" 
+                                id="vehicle_type" name="vehicle_type" required>
+                            <option value="">Select vehicle type...</option>
+                            <option value="bike" {{ old('vehicle_type') == 'bike' ? 'selected' : '' }}>Bike/Motorcycle (up to 10km, small packages)</option>
+                            <option value="car" {{ old('vehicle_type') == 'car' ? 'selected' : '' }}>Car (up to 90km, medium packages)</option>
+                            <option value="pickup" {{ old('vehicle_type') == 'pickup' ? 'selected' : '' }}>Pickup Truck (up to 90km, large/heavy items)</option>
+                        </select>
+                        <small class="form-text text-muted">Delivery cost will be calculated automatically. The map will show your service area radius.</small>
+                        @error('vehicle_type')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>Automatic Calculation:</strong> Order value, delivery cost, and your earnings will be calculated automatically based on distance and vehicle type.
                     </div>
 
                     <div class="alert alert-info">
@@ -148,12 +174,106 @@ document.addEventListener('DOMContentLoaded', function () {
     }).addTo(map);
 
     let marker = null;
+    let shopMarker = null;
+    let rangeCircle = null;
+    let rangeVisible = true;
+
+    // Maximum distances for each vehicle type (in km)
+    const maxDistances = {
+        'bike': 10,
+        'car': 90,
+        'pickup': 90
+    };
+
+    // Add shop location marker with better icon
+    if (shopLat && shopLng) {
+        const shopIcon = L.icon({
+            iconUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI1MCIgdmlld0JveD0iMCAwIDQwIDUwIj48cGF0aCBkPSJNMjAgMEMxMC4wNiAwIDIgNy45NCAyIDIwYzAgMTAgNDI0LCAzMCA0IDMwczIwLTIwIDIwLTMwQzM4IDcuOTQgMjkuOTQgMCAyMCAweiIgZmlsbD0iI0RDMTQzQyIgc3Ryb2tlPSIjQzAxMDI2IiBzdHJva2Utd2lkdGg9IjIiIi8+PGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iOCIgZmlsbD0iI2ZmZiIgc3Ryb2tlPSIjREMxNDNDIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNMTggMTlMMTggMjJMMjAgMjFMMjIgMjJMMjIgMTlIMTl6IE0xNyAxN0gyM1YxOEgxN3oiIGZpbGw9IiNEQzE0M0MiIi8+PC9zdmc+',
+            iconSize: [40, 50],
+            iconAnchor: [20, 50],
+            popupAnchor: [0, -50],
+            shadowUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI1MCIgdmlld0JveD0iMCAwIDQwIDUwIj48ZWxsaXBzZSBjeD0iMjAiIGN5PSI0NiIgcng9IjE0IiByeT0iMyIgZmlsbD0iIzAwMDAwMCIgb3BhY2l0eT0iMC4zIi8+PC9zdmc+',
+            shadowSize: [40, 50],
+            shadowAnchor: [20, 50]
+        });
+        shopMarker = L.marker([shopLat, shopLng], {
+            icon: shopIcon,
+            title: 'Your Shop Location'
+        }).addTo(map);
+        shopMarker.bindPopup('<strong>🏪 Your Shop</strong><br>Service area shown as circle');
+    }
+
+    // Initialize range circle based on selected vehicle type
+    function updateRangeCircle() {
+        const vehicleType = document.getElementById('vehicle_type').value;
+        const maxDistance = maxDistances[vehicleType] || 10;
+        
+        if (shopLat && shopLng) {
+            if (rangeCircle) {
+                map.removeLayer(rangeCircle);
+            }
+            
+            if (rangeVisible) {
+                rangeCircle = L.circle([shopLat, shopLng], {
+                    radius: maxDistance * 1000, // Convert km to meters
+                    color: vehicleType === 'bike' ? '#FFA500' : (vehicleType === 'car' ? '#4169E1' : '#DC143C'),
+                    fillColor: vehicleType === 'bike' ? '#FFA500' : (vehicleType === 'car' ? '#4169E1' : '#DC143C'),
+                    fillOpacity: 0.1,
+                    weight: 2,
+                    dashArray: '5, 5'
+                }).addTo(map);
+                
+                rangeCircle.bindPopup(`<strong>Service Area</strong><br>${vehicleType.toUpperCase()}: ${maxDistance}km radius`);
+            }
+        }
+    }
+
+    // Toggle range circle visibility
+    document.getElementById('toggleRangeBtn').addEventListener('click', function() {
+        rangeVisible = !rangeVisible;
+        const btn = document.getElementById('toggleRangeBtn');
+        
+        if (rangeVisible) {
+            btn.classList.remove('btn-outline-secondary');
+            btn.classList.add('btn-outline-primary');
+            btn.innerHTML = '<i class="bi bi-eye"></i> Toggle Service Area';
+            updateRangeCircle();
+        } else {
+            btn.classList.remove('btn-outline-primary');
+            btn.classList.add('btn-outline-secondary');
+            btn.innerHTML = '<i class="bi bi-eye-slash"></i> Toggle Service Area';
+            if (rangeCircle) {
+                map.removeLayer(rangeCircle);
+            }
+        }
+    });
+
+    // Update circle when vehicle type changes
+    document.getElementById('vehicle_type').addEventListener('change', updateRangeCircle);
+
+    // Initialize on page load
+    if (document.getElementById('vehicle_type').value) {
+        updateRangeCircle();
+    }
 
     function setMarker(lat, lng) {
         if (marker) {
             marker.setLatLng([lat, lng]);
         } else {
-            marker = L.marker([lat, lng]).addTo(map);
+            const clientIcon = L.icon({
+                iconUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI1MCIgdmlld0JveD0iMCAwIDQwIDUwIj48cGF0aCBkPSJNMjAgMEMxMC4wNiAwIDIgNy45NCAyIDIwYzAgMTAgMTggMzAgMTggMzBzMTAtMjAgMTAtMzBDMzggNy45NCAyOS45NCAwIDIwIDB6IiBmaWxsPSIjNDE2OUUxIiBzdHJva2U9IiMxOTQ3RDIiIHN0cm9rZS13aWR0aD0iMiIvPjxjaXJjbGUgY3g9IjIwIiBjeT0iMjAiIHI9IjgiIGZpbGw9IiNmZmYiIHN0cm9rZT0iIzQxNjlFMSIgc3Ryb2tlLXdpZHRoPSIyIi8+PHRleHQgeD0iMjAiIHk9IjI0IiBmb250LXNpemU9IjEyIiBmb250LXdlaWdodD0iYm9sZCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iIzQxNjlFMSI+QTwvdGV4dD48L3N2Zz4=',
+                iconSize: [40, 50],
+                iconAnchor: [20, 50],
+                popupAnchor: [0, -50],
+                shadowUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI1MCIgdmlld0JveD0iMCAwIDQwIDUwIj48ZWxsaXBzZSBjeD0iMjAiIGN5PSI0NiIgcng9IjE0IiByeT0iMyIgZmlsbD0iIzAwMDAwMCIgb3BhY2l0eT0iMC4zIi8+PC9zdmc+',
+                shadowSize: [40, 50],
+                shadowAnchor: [20, 50]
+            });
+            marker = L.marker([lat, lng], {
+                icon: clientIcon,
+                title: 'Client Location'
+            }).addTo(map);
+            marker.bindPopup('<strong>📍 Client Location</strong><br>Delivery destination');
         }
         document.getElementById('client_lat').value = lat.toFixed(8);
         document.getElementById('client_lng').value = lng.toFixed(8);
@@ -236,6 +356,7 @@ document.addEventListener('DOMContentLoaded', function () {
             searchResults.style.display = 'none';
         }
     });
+
 });
 </script>
 @endpush

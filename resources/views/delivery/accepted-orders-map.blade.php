@@ -205,7 +205,10 @@ function renderOrdersOnMap(orders) {
                 Phone: ${order.shop.phone}<br>
                 Client: ${order.client_name}<br>
                 Vehicle: ${order.vehicle_type}<br>
-                Profit: $${parseFloat(order.profit).toFixed(2)}<br>
+                Distance: ${order.distance_km ? order.distance_km + ' km' : 'N/A'}<br>
+                Order Price: $${order.order_price ? parseFloat(order.order_price).toFixed(2) : '0.00'}<br>
+                Delivery Fee: $${order.delivery_cost ? parseFloat(order.delivery_cost).toFixed(2) : '0.00'}<br>
+                Your Profit: $${parseFloat(order.profit).toFixed(2)}<br>
                 <a href="/delivery/orders/${order.id}" class="btn btn-sm btn-info mt-1">View Details</a>
             `;
         } else if (order.status === 'in_transit') {
@@ -218,7 +221,10 @@ function renderOrdersOnMap(orders) {
                 Client: ${order.client_name}<br>
                 Phone: ${order.client_phone}<br>
                 Vehicle: ${order.vehicle_type}<br>
-                Profit: $${parseFloat(order.profit).toFixed(2)}<br>
+                Distance: ${order.distance_km ? order.distance_km + ' km' : 'N/A'}<br>
+                Order Price: $${order.order_price ? parseFloat(order.order_price).toFixed(2) : '0.00'}<br>
+                Delivery Fee: $${order.delivery_cost ? parseFloat(order.delivery_cost).toFixed(2) : '0.00'}<br>
+                Your Profit: $${parseFloat(order.profit).toFixed(2)}<br>
                 <a href="/delivery/orders/${order.id}" class="btn btn-sm btn-info mt-1">View Details</a>
             `;
         }
