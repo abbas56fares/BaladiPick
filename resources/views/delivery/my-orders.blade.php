@@ -15,7 +15,6 @@
                         <table class="table table-hover">
                             <thead>
                                 <tr>
-                                    <th class="sortable">Order ID</th>
                                     <th class="sortable">Shop</th>
                                     <th class="sortable">Client</th>
                                     <th class="sortable">Vehicle</th>
@@ -28,7 +27,6 @@
                             <tbody>
                                 @foreach($orders as $order)
                                     <tr>
-                                        <td>#{{ $order->id }}</td>
                                         <td>{{ $order->shop->shop_name }}</td>
                                         <td>{{ $order->client_name }}</td>
                                         <td>
@@ -59,7 +57,7 @@
                     </div>
                     
                     <div class="mt-3">
-                        {{ $orders->links() }}
+                        {{ $orders->links('pagination.custom') }}
                     </div>
                 @else
                     <p class="text-muted">No orders yet. <a href="{{ route('delivery.map') }}">View available orders</a></p>

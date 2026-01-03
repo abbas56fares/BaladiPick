@@ -98,7 +98,7 @@
                     </div>
                     
                     <div class="mt-3">
-                        {{ $shops->links() }}
+                        {{ $shops->links('pagination.custom') }}
                     </div>
                 @else
                     <p class="text-muted">No shops registered yet.</p>
@@ -131,6 +131,10 @@
 @push('scripts')
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
+document.getElementById('refreshBtn').addEventListener('click', function() {
+    location.reload();
+});
+
 let locationMap = null;
 let locationMarker = null;
 
@@ -144,13 +148,17 @@ function showLocationMap(lat, lng, name) {
             locationMap.remove();
         }
         
-        locationMap = L.map('locationMap').setView([lat, lng], 15);
+        // Use Lebanon as default if coordinates are missing
+        const displayLat = lat || 33.8547;
+        const displayLng = lng || 35.8623;
+        
+        locationMap = L.map('locationMap').setView([displayLat, displayLng], 15);
         
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap contributors'
         }).addTo(locationMap);
         
-        locationMarker = L.marker([lat, lng]).addTo(locationMap)
+        locationMarker = L.marker([displayLat, displayLng]).addTo(locationMap)
             .bindPopup('<b>' + name + '</b>').openPopup();
     }, 300);
 }

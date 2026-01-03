@@ -276,7 +276,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         let html = '<div class="table-responsive"><table class="table table-hover table-sm sortable-table">';
         html += '<thead><tr>';
-        html += '<th class="sortable" data-column="id">Order ID <i class="bi bi-arrow-down-up"></i></th>';
         html += '<th class="sortable" data-column="shop">Shop <i class="bi bi-arrow-down-up"></i></th>';
         html += '<th class="sortable" data-column="client">Client <i class="bi bi-arrow-down-up"></i></th>';
         html += '<th class="sortable" data-column="vehicle">Vehicle <i class="bi bi-arrow-down-up"></i></th>';
@@ -286,7 +285,6 @@ document.addEventListener('DOMContentLoaded', function () {
         html += '</tr></thead><tbody>';
         orders.forEach(order => {
             html += '<tr>';
-            html += `<td>#${order.id}</td>`;
             html += `<td>${order.shop ? order.shop.shop_name : 'N/A'}</td>`;
             html += `<td>${order.client_name}</td>`;
             html += `<td><span class="badge bg-secondary">${order.vehicle_type}</span></td>`;
@@ -310,7 +308,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         let html = '<div class="table-responsive"><table class="table table-hover table-sm sortable-table">';
         html += '<thead><tr>';
-        html += '<th class="sortable" data-column="id">Order ID <i class="bi bi-arrow-down-up"></i></th>';
         html += '<th class="sortable" data-column="shop">Shop <i class="bi bi-arrow-down-up"></i></th>';
         html += '<th class="sortable" data-column="client">Client <i class="bi bi-arrow-down-up"></i></th>';
         html += '<th class="sortable" data-column="vehicle">Vehicle <i class="bi bi-arrow-down-up"></i></th>';
@@ -319,7 +316,6 @@ document.addEventListener('DOMContentLoaded', function () {
         html += '</tr></thead><tbody>';
         orders.forEach(order => {
             html += '<tr>';
-            html += `<td>#${order.id}</td>`;
             html += `<td>${order.shop ? order.shop.shop_name : 'N/A'}</td>`;
             html += `<td>${order.client_name}</td>`;
             html += `<td><span class="badge bg-secondary">${order.vehicle_type}</span></td>`;

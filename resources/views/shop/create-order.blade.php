@@ -38,6 +38,20 @@
                     <h5 class="mb-3 mt-4">Client Location</h5>
 
                     <div class="mb-3">
+                        <label for="location_search" class="form-label">Search Location</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" 
+                                   id="location_search" placeholder="Enter location name or address (e.g., Beirut, Lebanon)">
+                            <button class="btn btn-outline-secondary" type="button" id="search_location_btn">
+                                <i class="bi bi-search"></i> Search
+                            </button>
+                        </div>
+                        <div id="search_results" class="mt-2" style="display: none;">
+                            <div class="list-group" id="results_list"></div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
                         <p class="text-muted mb-2">Click on the map to set the client location. Coordinates will fill automatically.</p>
                         <div id="client-map" class="mb-3"></div>
                     </div>
@@ -121,8 +135,12 @@ document.addEventListener('DOMContentLoaded', function () {
     const oldLat = @json(old('client_lat'));
     const oldLng = @json(old('client_lng'));
 
-    const startLat = oldLat ? parseFloat(oldLat) : shopLat;
-    const startLng = oldLng ? parseFloat(oldLng) : shopLng;
+    // Lebanon center coordinates
+    const lebanonLat = 33.8547;
+    const lebanonLng = 35.8623;
+
+    const startLat = oldLat ? parseFloat(oldLat) : (shopLat && shopLng ? shopLat : lebanonLat);
+    const startLng = oldLng ? parseFloat(oldLng) : (shopLat && shopLng ? shopLng : lebanonLng);
 
     const map = L.map('client-map').setView([startLat, startLng], 13);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -139,6 +157,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         document.getElementById('client_lat').value = lat.toFixed(8);
         document.getElementById('client_lng').value = lng.toFixed(8);
+        map.setView([lat, lng], 13);
     }
 
     // Set initial marker if we have coordinates
@@ -148,6 +167,74 @@ document.addEventListener('DOMContentLoaded', function () {
 
     map.on('click', function (e) {
         setMarker(e.latlng.lat, e.latlng.lng);
+    });
+
+    // Location search functionality
+    const searchInput = document.getElementById('location_search');
+    const searchBtn = document.getElementById('search_location_btn');
+    const searchResults = document.getElementById('search_results');
+    const resultsList = document.getElementById('results_list');
+
+    function performSearch() {
+        const query = searchInput.value.trim();
+        if (!query) {
+            searchResults.style.display = 'none';
+            return;
+        }
+
+        const nominatimUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`;
+
+        fetch(nominatimUrl)
+            .then(response => response.json())
+            .then(data => {
+                resultsList.innerHTML = '';
+                
+                if (data.length === 0) {
+                    resultsList.innerHTML = '<div class="alert alert-warning mb-0">No results found</div>';
+                    searchResults.style.display = 'block';
+                    return;
+                }
+
+                data.forEach(item => {
+                    const resultItem = document.createElement('button');
+                    resultItem.type = 'button';
+                    resultItem.className = 'list-group-item list-group-item-action text-start';
+                    resultItem.innerHTML = `
+                        <strong>${item.name || item.display_name}</strong>
+                        <br>
+                        <small class="text-muted">${item.display_name}</small>
+                    `;
+                    resultItem.addEventListener('click', () => {
+                        const lat = parseFloat(item.lat);
+                        const lng = parseFloat(item.lon);
+                        setMarker(lat, lng);
+                        searchResults.style.display = 'none';
+                        searchInput.value = '';
+                    });
+                    resultsList.appendChild(resultItem);
+                });
+
+                searchResults.style.display = 'block';
+            })
+            .catch(error => {
+                console.error('Search error:', error);
+                resultsList.innerHTML = '<div class="alert alert-danger mb-0">Search failed. Please try again.</div>';
+                searchResults.style.display = 'block';
+            });
+    }
+
+    searchBtn.addEventListener('click', performSearch);
+    searchInput.addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            performSearch();
+        }
+    });
+
+    document.addEventListener('click', function (e) {
+        if (!e.target.closest('#location_search') && !e.target.closest('#search_location_btn') && !e.target.closest('#search_results')) {
+            searchResults.style.display = 'none';
+        }
     });
 });
 </script>

@@ -232,11 +232,22 @@
             const tbody = table.querySelector('tbody');
             if (!tbody) return;
 
-            headers.forEach((header, index) => {
+            headers.forEach((header) => {
                 header.style.cursor = 'pointer';
                 header.style.userSelect = 'none';
                 header.addEventListener('click', function() {
-                    sortTableByColumn(table, index);
+                    // Get the actual column index from all th elements
+                    const allHeaders = table.querySelectorAll('th');
+                    let columnIndex = -1;
+                    for (let i = 0; i < allHeaders.length; i++) {
+                        if (allHeaders[i] === header) {
+                            columnIndex = i;
+                            break;
+                        }
+                    }
+                    if (columnIndex >= 0) {
+                        sortTableByColumn(table, columnIndex);
+                    }
                 });
             });
         }
@@ -331,5 +342,3 @@
 
 </body>
 </html>
-
-```

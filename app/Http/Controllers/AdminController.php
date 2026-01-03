@@ -73,7 +73,7 @@ class AdminController extends Controller
             $query->where('is_verified', $request->verified);
         }
 
-        $shops = $query->latest()->paginate(20)->withQueryString();
+        $shops = $query->latest()->paginate(15)->withQueryString();
         return view('admin.shops', compact('shops'));
     }
 
@@ -82,8 +82,9 @@ class AdminController extends Controller
      */
     public function showShop($id)
     {
-        $shop = Shop::with('user', 'orders')->findOrFail($id);
-        return view('admin.shop-details', compact('shop'));
+        $shop = Shop::with('user')->findOrFail($id);
+        $orders = $shop->orders()->latest()->paginate(15);
+        return view('admin.shop-details', compact('shop', 'orders'));
     }
 
     /**
@@ -132,7 +133,7 @@ class AdminController extends Controller
             $query->where('verified', $request->verified);
         }
 
-        $deliveries = $query->latest()->paginate(20)->withQueryString();
+        $deliveries = $query->latest()->paginate(15)->withQueryString();
         return view('admin.deliveries', compact('deliveries'));
     }
 
@@ -141,8 +142,9 @@ class AdminController extends Controller
      */
     public function showDelivery($id)
     {
-        $delivery = User::where('role', 'delivery')->with('deliveryOrders')->findOrFail($id);
-        return view('admin.delivery-details', compact('delivery'));
+        $delivery = User::where('role', 'delivery')->findOrFail($id);
+        $orders = $delivery->deliveryOrders()->latest()->paginate(15);
+        return view('admin.delivery-details', compact('delivery', 'orders'));
     }
 
     /**
@@ -174,7 +176,7 @@ class AdminController extends Controller
     {
         $orders = Order::with(['shop', 'delivery'])
             ->latest()
-            ->paginate(20);
+            ->paginate(15);
 
         return view('admin.orders', compact('orders'));
     }

@@ -7,7 +7,12 @@
     <div class="col-12">
         <div class="card">
             <div class="card-header">
-                <h4>All Orders</h4>
+                <div class="d-flex justify-content-between align-items-center">
+                    <h4>All Orders</h4>
+                    <button class="btn btn-sm btn-outline-secondary" id="refreshBtn">
+                        <i class="bi bi-arrow-clockwise"></i> Refresh
+                    </button>
+                </div>
             </div>
             <div class="card-body">
                 @if($orders->count() > 0)
@@ -23,6 +28,19 @@
                                     <th class="sortable">Profit</th>
                                     <th class="sortable">Status</th>
                                     <th class="sortable">Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($orders as $order)
+                                    <tr>
+                                        <td>#{{ $order->id }}</td>
+                                        <td>{{ $order->shop->shop_name }}</td>
+                                        <td>{{ $order->client_name }}</td>
+                                        <td>{{ $order->delivery ? $order->delivery->name : 'Not assigned' }}</td>
+                                        <td>
+                                            <span class="badge bg-secondary">{{ ucfirst($order->vehicle_type) }}</span>
+                                        </td>
                                         <td>${{ number_format($order->profit, 2) }}</td>
                                         <td>
                                             @php
@@ -58,7 +76,7 @@
                     </div>
                     
                     <div class="mt-3">
-                        {{ $orders->links() }}
+                        {{ $orders->links('pagination.custom') }}
                     </div>
                 @else
                     <p class="text-muted">No orders yet.</p>
@@ -71,9 +89,13 @@
 
 @push('scripts')
 <script>
-// Auto-refresh page every 10 seconds to show real-time updates
-setInterval(function() {
-    location.reload();
-}, 10000);
+document.addEventListener('DOMContentLoaded', function() {
+    const refreshBtn = document.getElementById('refreshBtn');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', function() {
+            location.reload();
+        });
+    }
+});
 </script>
 @endpush

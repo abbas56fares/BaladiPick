@@ -181,7 +181,7 @@ class ShopController extends Controller
         $orders = $shop->orders()
             ->with('delivery')
             ->latest()
-            ->paginate(20);
+            ->paginate(15);
 
         return view('shop.orders', compact('orders'));
     }

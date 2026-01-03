@@ -206,7 +206,7 @@ class DeliveryController extends Controller
         $orders = Auth::user()->deliveryOrders()
             ->with('shop')
             ->latest()
-            ->paginate(20);
+            ->paginate(15);
 
         return view('delivery.my-orders', compact('orders'));
     }

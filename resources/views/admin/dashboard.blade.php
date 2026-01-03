@@ -4,9 +4,11 @@
 
 @section('content')
 <div class="row">
-    <div class="col-12">
+    <div class="col-12 d-flex justify-content-between align-items-center mb-3">
         <h2>Admin Dashboard</h2>
-        <p class="text-muted">System Overview</p>
+        <button class="btn btn-sm btn-outline-secondary" id="refreshBtn">
+            <i class="bi bi-arrow-clockwise"></i> Refresh
+        </button>
     </div>
 </div>
 
@@ -121,9 +123,14 @@
 
 @push('scripts')
 <script>
-// Auto-refresh page every 10 seconds to show real-time updates
-setInterval(function() {
-    location.reload();
-}, 10000);
+// Manual refresh button
+document.addEventListener('DOMContentLoaded', function() {
+    const refreshBtn = document.getElementById('refreshBtn');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', function() {
+            location.reload();
+        });
+    }
+});
 </script>
 @endpush

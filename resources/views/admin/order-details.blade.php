@@ -8,9 +8,12 @@
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h4 class="mb-0">Order #{{ $order->id }} Details</h4>
-                <div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-outline-secondary" id="refreshBtn">
+                        <i class="bi bi-arrow-clockwise"></i> Refresh
+                    </button>
                     @if($order->shop_lat && $order->shop_lng && $order->client_lat && $order->client_lng)
-                        <button type="button" class="btn btn-secondary"
+                        <button type="button" class="btn btn-sm btn-secondary"
                             onclick="showOrderLocationMap({{ $order->shop_lat }}, {{ $order->shop_lng }}, {{ $order->client_lat }}, {{ $order->client_lng }}, '{{ $order->shop->shop_name }}', '{{ $order->client_name }}')">
                             <i class="bi bi-geo-alt"></i> Show Location
                         </button>
@@ -174,10 +177,16 @@ function showOrderLocationMap(shopLat, shopLng, clientLat, clientLng, shopName, 
             orderMap.remove();
         }
 
+        // Use Lebanon as default if coordinates are missing
+        const displayShopLat = shopLat || 33.8547;
+        const displayShopLng = shopLng || 35.8623;
+        const displayClientLat = clientLat || 33.8547;
+        const displayClientLng = clientLng || 35.8623;
+
         // Center between two points
         const bounds = L.latLngBounds([
-            [shopLat, shopLng],
-            [clientLat, clientLng]
+            [displayShopLat, displayShopLng],
+            [displayClientLat, displayClientLng]
         ]);
 
         orderMap = L.map('orderLocationMap');
@@ -187,14 +196,14 @@ function showOrderLocationMap(shopLat, shopLng, clientLat, clientLng, shopName, 
         }).addTo(orderMap);
 
         // Markers
-        shopMarker = L.marker([shopLat, shopLng], { title: 'Pickup: ' + shopName }).addTo(orderMap)
+        shopMarker = L.marker([displayShopLat, displayShopLng], { title: 'Pickup: ' + shopName }).addTo(orderMap)
             .bindPopup('<b>Pickup</b><br>' + shopName).openPopup();
 
-        clientMarker = L.marker([clientLat, clientLng], { title: 'Drop-off: ' + clientName }).addTo(orderMap)
+        clientMarker = L.marker([displayClientLat, displayClientLng], { title: 'Drop-off: ' + clientName }).addTo(orderMap)
             .bindPopup('<b>Drop-off</b><br>' + clientName);
 
         // Try OSRM routing for street path
-        const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${shopLng},${shopLat};${clientLng},${clientLat}?overview=full&geometries=geojson`;
+        const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${displayShopLng},${displayShopLat};${displayClientLng},${displayClientLat}?overview=full&geometries=geojson`;
 
         fetch(osrmUrl)
             .then(res => res.json())
@@ -215,7 +224,7 @@ function showOrderLocationMap(shopLat, shopLng, clientLat, clientLng, shopName, 
                     orderMap.fitBounds(routeLayer.getBounds(), { padding: [30, 30] });
                 } else {
                     // Fallback: straight line
-                    routeLayer = L.polyline([[shopLat, shopLng], [clientLat, clientLng]], {
+                    routeLayer = L.polyline([[displayShopLat, displayShopLng], [displayClientLat, displayClientLng]], {
                         color: '#0d6efd',
                         weight: 4,
                         opacity: 0.8
@@ -225,7 +234,7 @@ function showOrderLocationMap(shopLat, shopLng, clientLat, clientLng, shopName, 
             })
             .catch(() => {
                 // Fallback: straight line on error
-                routeLayer = L.polyline([[shopLat, shopLng], [clientLat, clientLng]], {
+                routeLayer = L.polyline([[displayShopLat, displayShopLng], [displayClientLat, displayClientLng]], {
                     color: '#0d6efd',
                     weight: 4,
                     opacity: 0.8
@@ -235,11 +244,16 @@ function showOrderLocationMap(shopLat, shopLng, clientLat, clientLng, shopName, 
     }, 300);
 }
 
-// Auto-refresh every 10 seconds to show order status and delivery changes
-setInterval(function() {
-    if ($('.modal.show').length === 0 && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
-        location.reload();
+// Manual refresh button
+document.addEventListener('DOMContentLoaded', function() {
+    const refreshBtn = document.getElementById('refreshBtn');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', function() {
+            if ($('.modal.show').length === 0 && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+                location.reload();
+            }
+        });
     }
-}, 10000); // 10 seconds
+});
 </script>
 @endpush

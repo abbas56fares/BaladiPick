@@ -5,8 +5,11 @@
 @section('content')
 <div class="row">
     <div class="col-12">
-        <div class="mb-3">
+        <div class="mb-3 d-flex justify-content-between align-items-center">
             <a href="{{ route('admin.shops') }}" class="btn btn-secondary"><i class="bi bi-arrow-left"></i> Back to Shops</a>
+            <button class="btn btn-sm btn-outline-secondary" id="refreshBtn">
+                <i class="bi bi-arrow-clockwise"></i> Refresh
+            </button>
         </div>
 
         <div class="card mb-4">
@@ -146,7 +149,7 @@
                             <div class="card bg-success text-white">
                                 <div class="card-body">
                                     <h6>Delivered</h6>
-                                    <h3>{{ $shop->orders->where('status', 'delivered')->count() }}</h3>
+                                    <h3>{{ $shop->orders()->where('status', 'delivered')->count() }}</h3>
                                 </div>
                             </div>
                         </div>
@@ -154,7 +157,7 @@
                             <div class="card bg-warning text-white">
                                 <div class="card-body">
                                     <h6>Pending</h6>
-                                    <h3>{{ $shop->orders->whereIn('status', ['available', 'pending', 'in_transit'])->count() }}</h3>
+                                    <h3>{{ $shop->orders()->whereIn('status', ['available', 'pending', 'in_transit'])->count() }}</h3>
                                 </div>
                             </div>
                         </div>
@@ -162,7 +165,7 @@
                             <div class="card bg-danger text-white">
                                 <div class="card-body">
                                     <h6>Cancelled</h6>
-                                    <h3>{{ $shop->orders->where('status', 'cancelled')->count() }}</h3>
+                                    <h3>{{ $shop->orders()->where('status', 'cancelled')->count() }}</h3>
                                 </div>
                             </div>
                         </div>
@@ -182,7 +185,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach($shop->orders->take(20) as $order)
+                                @foreach($orders as $order)
                                     <tr>
                                         <td>
                                             <a href="{{ route('admin.orders.show', $order->id) }}">#{{ $order->id }}</a>
@@ -202,9 +205,10 @@
                             </tbody>
                         </table>
                     </div>
-                    @if($shop->orders->count() > 20)
-                        <p class="text-muted text-center mt-3">Showing latest 20 orders</p>
-                    @endif
+                    
+                    <div class="mt-3">
+                        {{ $orders->links('pagination.custom') }}
+                    </div>
                 @else
                     <p class="text-muted">No orders yet.</p>
                 @endif
@@ -249,22 +253,31 @@ function showLocationMap(lat, lng, name) {
             locationMap.remove();
         }
         
-        locationMap = L.map('locationMap').setView([lat, lng], 15);
+        // Use Lebanon as default if coordinates are missing
+        const displayLat = lat || 33.8547;
+        const displayLng = lng || 35.8623;
+        
+        locationMap = L.map('locationMap').setView([displayLat, displayLng], 15);
         
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap contributors'
         }).addTo(locationMap);
         
-        locationMarker = L.marker([lat, lng]).addTo(locationMap)
+        locationMarker = L.marker([displayLat, displayLng]).addTo(locationMap)
             .bindPopup('<b>' + name + '</b>').openPopup();
     }, 300);
 }
 
-// Auto-refresh every 15 seconds to show verification status changes
-setInterval(function() {
-    if ($('.modal.show').length === 0 && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
-        location.reload();
+// Manual refresh button
+document.addEventListener('DOMContentLoaded', function() {
+    const refreshBtn = document.getElementById('refreshBtn');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', function() {
+            if ($('.modal.show').length === 0 && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+                location.reload();
+            }
+        });
     }
-}, 15000); // 15 seconds
+});
 </script>
 @endpush

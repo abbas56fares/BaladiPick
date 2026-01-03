@@ -45,6 +45,20 @@
                     <h5 class="mb-3">Shop Location</h5>
 
                     <div class="mb-3">
+                        <label for="location_search" class="form-label">Search Location</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" 
+                                   id="location_search" placeholder="Enter location name or address (e.g., Beirut, Lebanon)">
+                            <button class="btn btn-outline-secondary" type="button" id="search_location_btn">
+                                <i class="bi bi-search"></i> Search
+                            </button>
+                        </div>
+                        <div id="search_results" class="mt-2" style="display: none;">
+                            <div class="list-group" id="results_list"></div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
                         <p class="text-muted mb-2">Click on the map to set your shop location. Coordinates will fill automatically.</p>
                         <div id="shop-map" class="mb-3"></div>
                     </div>
@@ -103,9 +117,13 @@ document.addEventListener('DOMContentLoaded', function () {
     const existingLat = @json(old('latitude', $shop->latitude ?? null));
     const existingLng = @json(old('longitude', $shop->longitude ?? null));
 
-    // Fallback center if no coordinates yet
-    const fallbackLat = 31.9539; // Amman approx
-    const fallbackLng = 35.9106;
+    // Lebanon center coordinates
+    const lebanonLat = 33.8547;
+    const lebanonLng = 35.8623;
+
+    // Fallback center (Lebanon)
+    const fallbackLat = lebanonLat;
+    const fallbackLng = lebanonLng;
 
     const startLat = existingLat ? parseFloat(existingLat) : fallbackLat;
     const startLng = existingLng ? parseFloat(existingLng) : fallbackLng;
@@ -125,14 +143,88 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         document.getElementById('latitude').value = lat.toFixed(8);
         document.getElementById('longitude').value = lng.toFixed(8);
+        map.setView([lat, lng], 13);
     }
 
     if (existingLat && existingLng) {
         setMarker(parseFloat(existingLat), parseFloat(existingLng));
+    } else {
+        // Set default marker at Lebanon
+        setMarker(fallbackLat, fallbackLng);
     }
 
     map.on('click', function (e) {
         setMarker(e.latlng.lat, e.latlng.lng);
+    });
+
+    // Location search functionality
+    const searchInput = document.getElementById('location_search');
+    const searchBtn = document.getElementById('search_location_btn');
+    const searchResults = document.getElementById('search_results');
+    const resultsList = document.getElementById('results_list');
+
+    function performSearch() {
+        const query = searchInput.value.trim();
+        if (!query) {
+            searchResults.style.display = 'none';
+            return;
+        }
+
+        // Use Nominatim API for geocoding
+        const nominatimUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`;
+
+        fetch(nominatimUrl)
+            .then(response => response.json())
+            .then(data => {
+                resultsList.innerHTML = '';
+                
+                if (data.length === 0) {
+                    resultsList.innerHTML = '<div class="alert alert-warning mb-0">No results found</div>';
+                    searchResults.style.display = 'block';
+                    return;
+                }
+
+                data.forEach(item => {
+                    const resultItem = document.createElement('button');
+                    resultItem.type = 'button';
+                    resultItem.className = 'list-group-item list-group-item-action text-start';
+                    resultItem.innerHTML = `
+                        <strong>${item.name || item.display_name}</strong>
+                        <br>
+                        <small class="text-muted">${item.display_name}</small>
+                    `;
+                    resultItem.addEventListener('click', () => {
+                        const lat = parseFloat(item.lat);
+                        const lng = parseFloat(item.lon);
+                        setMarker(lat, lng);
+                        searchResults.style.display = 'none';
+                        searchInput.value = '';
+                    });
+                    resultsList.appendChild(resultItem);
+                });
+
+                searchResults.style.display = 'block';
+            })
+            .catch(error => {
+                console.error('Search error:', error);
+                resultsList.innerHTML = '<div class="alert alert-danger mb-0">Search failed. Please try again.</div>';
+                searchResults.style.display = 'block';
+            });
+    }
+
+    searchBtn.addEventListener('click', performSearch);
+    searchInput.addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            performSearch();
+        }
+    });
+
+    // Hide search results when clicking outside
+    document.addEventListener('click', function (e) {
+        if (!e.target.closest('#location_search') && !e.target.closest('#search_location_btn') && !e.target.closest('#search_results')) {
+            searchResults.style.display = 'none';
+        }
     });
 });
 </script>

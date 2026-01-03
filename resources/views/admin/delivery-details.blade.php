@@ -5,8 +5,11 @@
 @section('content')
 <div class="row">
     <div class="col-12">
-        <div class="mb-3">
+        <div class="mb-3 d-flex justify-content-between align-items-center">
             <a href="{{ route('admin.deliveries') }}" class="btn btn-secondary"><i class="bi bi-arrow-left"></i> Back to Deliveries</a>
+            <button class="btn btn-sm btn-outline-secondary" id="refreshBtn">
+                <i class="bi bi-arrow-clockwise"></i> Refresh
+            </button>
         </div>
 
         <div class="card mb-4">
@@ -172,7 +175,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach($delivery->deliveryOrders->take(20) as $order)
+                                @foreach($orders as $order)
                                     <tr>
                                         <td>
                                             <a href="{{ route('admin.orders.show', $order->id) }}">#{{ $order->id }}</a>
@@ -193,9 +196,10 @@
                             </tbody>
                         </table>
                     </div>
-                    @if($delivery->deliveryOrders->count() > 20)
-                        <p class="text-muted text-center mt-3">Showing latest 20 orders</p>
-                    @endif
+                    
+                    <div class="mt-3">
+                        {{ $orders->links('pagination.custom') }}
+                    </div>
                 @else
                     <p class="text-muted">No delivery orders yet.</p>
                 @endif
@@ -204,13 +208,18 @@
     </div>
 </div>
 
-<!-- Auto-refresh every 15 seconds to show verification status and order changes -->
+<!-- Manual refresh button -->
 <script>
-    setInterval(function() {
-        if ($('.modal.show').length === 0 && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
-            location.reload();
+    document.addEventListener('DOMContentLoaded', function() {
+        const refreshBtn = document.getElementById('refreshBtn');
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', function() {
+                if ($('.modal.show').length === 0 && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+                    location.reload();
+                }
+            });
         }
-    }, 15000); // 15 seconds
+    });
 </script>
 
 @endsection
