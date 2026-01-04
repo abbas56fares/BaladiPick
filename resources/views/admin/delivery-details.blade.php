@@ -71,7 +71,7 @@
                                 <th>ID Document:</th>
                                 <td>
                                     @if($delivery->id_document_path)
-                                        <a href="{{ asset('storage/' . $delivery->id_document_path) }}" target="_blank" class="btn btn-sm btn-info">
+                                        <a href="{{ \App\Helpers\DocumentHelper::getDocumentUrl($delivery->id_document_path) }}" target="_blank" class="btn btn-sm btn-info">
                                             <i class="bi bi-file-image"></i> View Document
                                         </a>
                                     @else

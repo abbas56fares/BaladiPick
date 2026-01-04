@@ -90,7 +90,7 @@
                                         <td>{{ $delivery->phone }}</td>
                                         <td>
                                             @if($delivery->id_document_path)
-                                                <a href="{{ asset('storage/' . $delivery->id_document_path) }}" target="_blank" class="btn btn-xs btn-info"><i class="bi bi-eye"></i></a>
+                                                <a href="{{ \App\Helpers\DocumentHelper::getDocumentUrl($delivery->id_document_path) }}" target="_blank" class="btn btn-xs btn-info"><i class="bi bi-eye"></i></a>
                                             @else
                                                 <span class="text-muted">-</span>
                                             @endif

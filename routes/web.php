@@ -11,6 +11,17 @@ Route::get('/', function () {
     return view('landing');
 });
 
+// Document Download Route
+Route::get('/documents/{path}', function ($path) {
+    $filePath = storage_path("app/public/{$path}");
+    
+    if (!file_exists($filePath)) {
+        abort(404, 'File not found');
+    }
+    
+    return response()->file($filePath);
+})->where('path', '.*')->name('documents.show');
+
 // Authentication Routes
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
