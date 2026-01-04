@@ -10,6 +10,7 @@ use App\Services\DeliveryCostCalculator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class ShopController extends Controller
 {
@@ -532,5 +533,41 @@ class ShopController extends Controller
             });
 
         return response()->json($orders);
+    }
+
+    /**
+     * Change password - Show form
+     */
+    public function changePassword()
+    {
+        return view('shop.change-password');
+    }
+
+    /**
+     * Update password
+     */
+    public function updatePassword(Request $request)
+    {
+        $validated = $request->validate([
+            'current_password' => 'required|string',
+            'new_password' => 'required|string|min:8|confirmed',
+        ]);
+
+        $user = Auth::user();
+
+        // Check if current password is correct
+        if (!Hash::check($validated['current_password'], $user->password)) {
+            return back()->withErrors(['current_password' => 'The current password is incorrect.']);
+        }
+
+        // Check if new password is different from current password
+        if (Hash::check($validated['new_password'], $user->password)) {
+            return back()->withErrors(['new_password' => 'The new password must be different from the current password.']);
+        }
+
+        // Update password
+        $user->update(['password' => Hash::make($validated['new_password'])]);
+
+        return back()->with('success', 'Password changed successfully!');
     }
 }

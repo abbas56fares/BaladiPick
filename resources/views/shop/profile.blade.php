@@ -94,6 +94,7 @@
 
                     <button type="submit" class="btn btn-primary">Save Profile</button>
                     @if($shop)
+                        <a href="{{ route('shop.change-password') }}" class="btn btn-warning">Change Password</a>
                         <a href="{{ route('shop.dashboard') }}" class="btn btn-secondary">Cancel</a>
                     @endif
                 </form>

@@ -37,6 +37,8 @@ Route::middleware(['auth', 'role:shop'])->prefix('shop')->name('shop.')->group(f
     Route::get('/dashboard', [ShopController::class, 'dashboard'])->name('dashboard');
     Route::get('/profile', [ShopController::class, 'profile'])->name('profile');
     Route::post('/profile', [ShopController::class, 'updateProfile'])->name('profile.update');
+    Route::get('/change-password', [ShopController::class, 'changePassword'])->name('change-password');
+    Route::post('/change-password', [ShopController::class, 'updatePassword'])->name('update-password');
     Route::get('/orders', [ShopController::class, 'orders'])->name('orders');
     Route::get('/orders/map', [ShopController::class, 'ordersMap'])->name('orders.map');
     Route::get('/orders/map/data', [ShopController::class, 'ordersMapData'])->name('orders.map.data');
@@ -55,6 +57,10 @@ Route::middleware(['auth', 'role:delivery'])->prefix('delivery')->name('delivery
     Route::get('/dashboard', [DeliveryController::class, 'dashboard'])->name('dashboard');
     Route::get('/map', [DeliveryController::class, 'map'])->name('map');
     Route::get('/accepted-orders-map', [DeliveryController::class, 'acceptedOrdersMap'])->name('accepted.orders.map');
+    Route::get('/settings', [DeliveryController::class, 'settings'])->name('settings');
+    Route::post('/settings/update', [DeliveryController::class, 'updateSettings'])->name('settings.update');
+    Route::get('/change-password', [DeliveryController::class, 'changePassword'])->name('change-password');
+    Route::post('/change-password', [DeliveryController::class, 'updatePassword'])->name('update-password');
     Route::get('/orders/available', [DeliveryController::class, 'availableOrders'])->name('orders.available');
     Route::get('/orders/accepted', [DeliveryController::class, 'acceptedOrders'])->name('orders.accepted');
     Route::post('/orders/{id}/accept', [DeliveryController::class, 'acceptOrder'])->name('orders.accept');
@@ -64,8 +70,6 @@ Route::middleware(['auth', 'role:delivery'])->prefix('delivery')->name('delivery
     Route::post('/orders/{id}/verify-qr', [DeliveryController::class, 'verifyQR'])->name('orders.verify-qr');
     Route::post('/orders/{id}/generate-otp', [DeliveryController::class, 'generateOTP'])->name('orders.generate-otp');
     Route::post('/orders/{id}/verify-otp', [DeliveryController::class, 'verifyOTP'])->name('orders.verify-otp');
-    Route::get('/settings', [DeliveryController::class, 'settings'])->name('settings');
-    Route::post('/settings/update', [DeliveryController::class, 'updateSettings'])->name('settings.update');
 });
 
 // Admin Routes

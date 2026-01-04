@@ -199,6 +199,11 @@
                             <strong>Member Since:</strong> {{ $user->created_at->format('M d, Y') }}
                         </li>
                     </ul>
+                    <div class="mt-3">
+                        <a href="{{ route('delivery.change-password') }}" class="btn btn-warning btn-sm">
+                            <i class="bi bi-lock"></i> Change Password
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>

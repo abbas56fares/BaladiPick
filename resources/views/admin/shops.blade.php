@@ -56,7 +56,10 @@
                                         <td>{{ $shop->phone }}</td>
                                         <td>
                                             @if($shop->user->id_document_path)
-                                                <a href="{{ \App\Helpers\DocumentHelper::getDocumentUrl($shop->user->id_document_path) }}" target="_blank" class="btn btn-sm btn-info">View</a>
+                                                <button type="button" class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#documentModal" 
+                                                    onclick="loadDocument('{{ asset('storage/' . $shop->user->id_document_path) }}', '{{ $shop->user->name }} - ID Document')">
+                                                    <i class="bi bi-eye"></i> View
+                                                </button>
                                             @else
                                                 <span class="text-muted">N/A</span>
                                             @endif
@@ -167,5 +170,26 @@ function showLocationMap(lat, lng, name) {
 setInterval(function() {
     location.reload();
 }, 15000);
+
+// Document Modal
+function loadDocument(url, title) {
+    document.getElementById('documentModalLabel').innerText = title;
+    document.getElementById('documentImage').src = url;
+}
 </script>
+
+<!-- Document Viewer Modal -->
+<div class="modal fade" id="documentModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="documentModalLabel">Document</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="documentImage" src="" alt="Document" style="max-width: 100%; max-height: 600px;">
+            </div>
+        </div>
+    </div>
+</div>
 @endpush
