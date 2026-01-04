@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -12,48 +11,24 @@ class DatabaseSeeder extends Seeder
 
     /**
      * Seed the application's database.
+     * 
+     * Creates:
+     * - 1 Admin user
+     * - 4 Shop users with shops in Lebanon
+     * - 3 Delivery users (bike, car, pickup)
+     * - 12 Orders (3 per shop, one for each vehicle type)
+     * - Application settings for delivery cost calculation
      */
     public function run(): void
     {
-        // Create default admin user
-        User::create([
-            'name' => 'Admin',
-            'email' => 'admin@baladipick.com',
-            'password' => bcrypt('password'),
-            'phone' => '0501234567',
-            'role' => 'admin',
-            'verified' => true,
+        // Run seeders in order
+        $this->call([
+            UserSeeder::class,
+            ShopSeeder::class,
+            OrderSeeder::class,
+            SettingsSeeder::class,
         ]);
 
-        // Create sample shop user
-        $shopUser = User::create([
-            'name' => 'Shop Owner',
-            'email' => 'shop@baladipick.com',
-            'password' => bcrypt('password'),
-            'phone' => '0509876543',
-            'role' => 'shop',
-            'verified' => true,
-        ]);
-
-        // Create shop profile
-        \App\Models\Shop::create([
-            'user_id' => $shopUser->id,
-            'shop_name' => 'Test Shop',
-            'phone' => '0509876543',
-            'address' => 'Tel Aviv, Israel',
-            'latitude' => 32.0853,
-            'longitude' => 34.7818,
-            'is_verified' => true,
-        ]);
-
-        // Create sample delivery user
-        User::create([
-            'name' => 'Delivery Driver',
-            'email' => 'delivery@baladipick.com',
-            'password' => bcrypt('password'),
-            'phone' => '0507654321',
-            'role' => 'delivery',
-            'verified' => true,
-        ]);
+        $this->command->info('Database seeded successfully!');
     }
 }

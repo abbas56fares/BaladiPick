@@ -80,3 +80,4 @@ pnpm-lock.yaml
 .php_cs.cache
 .php-cs-fixer.cache
 PROJECT_DOCUMENTATION.txt
+DEPLOYMENT_GUIDE.txt
