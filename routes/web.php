@@ -61,6 +61,10 @@ Route::middleware(['auth', 'role:delivery'])->prefix('delivery')->name('delivery
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
     
+    // Admin Profile
+    Route::get('/profile', [AdminController::class, 'profile'])->name('profile');
+    Route::post('/profile', [AdminController::class, 'updateProfile'])->name('profile.update');
+    
     // Settings Management
     Route::get('/settings', [AdminSettingsController::class, 'index'])->name('settings');
     Route::put('/settings', [AdminSettingsController::class, 'update'])->name('settings.update');

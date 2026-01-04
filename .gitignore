@@ -1,5 +1,6 @@
 # Laravel
 *.log
+*.txt
 .env
 .env.backup
 .env.production

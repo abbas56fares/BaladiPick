@@ -447,4 +447,45 @@ class AdminController extends Controller
             'deliveredPickupOrders' => $stats['deliveredOrders'],
         ]);
     }
+
+    /**
+     * Show admin profile
+     */
+    public function profile()
+    {
+        $admin = Auth::user();
+        return view('admin.profile', compact('admin'));
+    }
+
+    /**
+     * Update admin profile
+     */
+    public function updateProfile(Request $request)
+    {
+        $admin = Auth::user();
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|max:255|unique:users,email,' . $admin->id,
+            'phone' => 'nullable|string|max:20',
+            'timezone' => 'nullable|timezone',
+            'password' => 'nullable|min:8|confirmed',
+        ]);
+
+        // Update basic info
+        $admin->update([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'phone' => $validated['phone'] ?? $admin->phone,
+            'timezone' => $validated['timezone'] ?? $admin->timezone,
+        ]);
+
+        // Update password if provided
+        if (!empty($validated['password'])) {
+            $admin->update(['password' => bcrypt($validated['password'])]);
+        }
+
+        return redirect()->route('admin.profile')->with('success', 'Profile updated successfully!');
+    }
 }
+

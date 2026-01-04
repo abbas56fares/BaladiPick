@@ -159,10 +159,34 @@
                                 {{ auth()->user()->name }}
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end">
+                                @if(auth()->user()->isAdmin())
+                                    <li>
+                                        <a class="dropdown-item" href="{{ route('admin.profile') }}">
+                                            <i class="bi bi-person-circle"></i> Profile
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                @elseif(auth()->user()->isShop())
+                                    <li>
+                                        <a class="dropdown-item" href="{{ route('shop.profile') }}">
+                                            <i class="bi bi-person-circle"></i> Profile
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                @elseif(auth()->user()->isDelivery())
+                                    <li>
+                                        <a class="dropdown-item" href="{{ route('delivery.settings') }}">
+                                            <i class="bi bi-gear"></i> Settings
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                @endif
                                 <li>
                                     <form action="{{ route('logout') }}" method="POST">
                                         @csrf
-                                        <button type="submit" class="dropdown-item">Logout</button>
+                                        <button type="submit" class="dropdown-item">
+                                            <i class="bi bi-box-arrow-right"></i> Logout
+                                        </button>
                                     </form>
                                 </li>
                             </ul>
