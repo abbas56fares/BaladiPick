@@ -18,6 +18,7 @@ return new class extends Migration
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->string('phone')->nullable();
+            $table->string('timezone')->default('UTC');
             $table->enum('role', ['admin', 'shop', 'delivery'])->default('shop');
             $table->enum('vehicle_type', ['bike', 'car', 'pickup'])->nullable()->comment('For delivery users only');
             $table->boolean('verified')->default(false);

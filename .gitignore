@@ -79,3 +79,4 @@ pnpm-lock.yaml
 /_ide_helper_models.php
 .php_cs.cache
 .php-cs-fixer.cache
+PROJECT_DOCUMENTATION.txt

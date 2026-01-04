@@ -1,6 +1,6 @@
 ================================================================================
-                          BALADIPICK PROJECT DOCUMENTATION
-                                  Version 2.31.0
+                            BALADIPICK PROJECT DOCUMENTATION
+                              Version 3.1.1
                               Laravel Delivery System
 ================================================================================
 
@@ -259,7 +259,7 @@ PERFORMANCE OPTIMIZATIONS
 - Asset compilation and minification
 - Query optimization with proper indexes
 
-RECENT UPDATES (v2.31.0)
+RECENT UPDATES (v3.1.1)
 ------------------------
 ✓ Added delivery driver settings page
   - Edit profile: name, email, phone, vehicle type, license
@@ -316,6 +316,7 @@ SUPPORT & MAINTENANCE
 
 VERSION HISTORY
 ---------------
+v3.1.1 - Vehicle-type delivery pages, per-vehicle verification badges, cleaned headers
 v2.31.0 - Delivery settings, enhanced order details, improved map popups
 v2.30.2 - Previous stable version
 
